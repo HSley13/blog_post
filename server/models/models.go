@@ -39,4 +39,3 @@ type Like struct {
 	User      User    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"user"`
 	Comment   Comment `gorm:"foreignKey:CommentID;constraint:OnDelete:CASCADE;" json:"comment"`
 }
-

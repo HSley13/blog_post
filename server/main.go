@@ -5,6 +5,7 @@ import (
 	"comment/models"
 	"comment/seeds"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,6 +25,13 @@ func main() {
 
 	app := fiber.New()
 
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     os.Getenv("ALLOWED_ORIGINS"),
+		AllowMethods:     "GET,POST,PUT,DELETE",
+		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
+		AllowCredentials: true,
+	}))
+
 	// Middleware to set user ID cookie
 	app.Use(func(ctx *fiber.Ctx) error {
 		userId := ctx.Cookies("userId")
@@ -31,7 +39,7 @@ func main() {
 			user := getOrCreateUser(db, "Sley")
 			ctx.Cookie(&fiber.Cookie{
 				Name:    "userId",
-				Value:   user.ID, // Use UUID directly (no need to convert to int)
+				Value:   user.ID,
 				Expires: time.Now().Add(24 * time.Hour),
 			})
 		}
@@ -57,10 +65,9 @@ func main() {
 		return handlers.HandleToggleLike(ctx, db)
 	})
 
-	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000" // Default port if not set
+		port = "3000"
 	}
 	log.Printf("Server is running on port %s", port)
 	if err := app.Listen(":" + port); err != nil {
@@ -80,7 +87,6 @@ func initDb() *gorm.DB {
 		log.Fatalf("Failed to enable UUID extension: %v", err)
 	}
 
-	// Auto-migrate models
 	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.Like{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

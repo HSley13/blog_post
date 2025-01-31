@@ -6,11 +6,11 @@ type MakeRequestProps = {
 };
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
 
-export const makeRequest = async ({ url, options = {} }: MakeRequestProps) => {
+export const makeRequest = async ({ url, options }: MakeRequestProps) => {
   try {
     const response: AxiosResponse = await api(url, options);
     return response.data;
@@ -18,12 +18,28 @@ export const makeRequest = async ({ url, options = {} }: MakeRequestProps) => {
     const axiosError = error as AxiosError;
 
     if (axiosError.response) {
-      const errorMessage =
-        axiosError.response.data?.message || "An error occurred";
-      return Promise.reject(errorMessage);
+      // Handle error response from the server
+      const responseData = axiosError.response.data;
+
+      // Check if responseData is an object and has a 'message' property
+      if (
+        typeof responseData === "object" &&
+        responseData !== null &&
+        "message" in responseData
+      ) {
+        return Promise.reject(responseData.message);
+      } else if (typeof responseData === "string") {
+        // If the response data is a string, use it as the error message
+        return Promise.reject(responseData);
+      } else {
+        // Fallback error message
+        return Promise.reject("An error occurred");
+      }
     } else if (axiosError.request) {
+      // The request was made but no response was received
       return Promise.reject("No response received from the server");
     } else {
+      // Something happened in setting up the request that triggered an error
       return Promise.reject("An error occurred while setting up the request");
     }
   }
