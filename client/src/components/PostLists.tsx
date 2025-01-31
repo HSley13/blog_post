@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
 import { getPosts } from "../services/posts";
 import { Link } from "react-router-dom";
+import { useAsync } from "../hooks/useAsync";
 
 export const PostList = () => {
-  const [posts, setPosts] = useState([]);
+  const { loading, error, value: posts } = useAsync(getPosts);
 
-  useEffect(() => {
-    getPosts().then(setPosts);
-  }, []);
+  if (loading) {
+    return <h1>Loading...</h1>;
+  }
+
+  if (error) {
+    return <h1 className="error-msg">{error}</h1>;
+  }
 
   return (
     <ul>
