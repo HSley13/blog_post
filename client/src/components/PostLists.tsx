@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { getPosts } from "../services/posts";
 import { Link } from "react-router-dom";
 import { useAsync } from "../hooks/useAsync";

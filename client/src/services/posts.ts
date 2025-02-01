@@ -6,3 +6,10 @@ export const getPosts = async () => {
   });
   return response;
 };
+
+export const getPost = async (id: string) => {
+  const response = await makeRequest({
+    url: `/posts/${id}`,
+  });
+  return response;
+};

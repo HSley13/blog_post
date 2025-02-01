@@ -58,11 +58,9 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 	}
 
 	return ctx.JSON(fiber.Map{
-		"post": fiber.Map{
-			"id":    post.ID,
-			"title": post.Title,
-			"body":  post.Body,
-		},
+		"id":       post.ID,
+		"title":    post.Title,
+		"body":     post.Body,
 		"comments": comments,
 	})
 }
@@ -190,4 +188,3 @@ func HandleToggleLike(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.JSON(fiber.Map{"message": "Like added", "addLike": true})
 	}
 }
-
