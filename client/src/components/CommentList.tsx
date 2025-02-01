@@ -22,6 +22,7 @@ export const CommentList = ({ comments, getReplies }: CommentListProps) => {
   return comments.map((comment) => (
     <div key={comment.id} className="comment-stack">
       <Comment
+        id={comment.id}
         message={comment.message}
         user={comment.user}
         createdAt={comment.createdAt}
