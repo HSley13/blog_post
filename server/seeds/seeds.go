@@ -49,6 +49,23 @@ func Seed(db *gorm.DB) {
 		UserID:  tony.ID,
 		PostID:  post1.ID,
 	}
+	comment6 := models.Comment{
+		Message:  "Iron Man can single handle Batman",
+		UserID:   steve.ID,
+		PostID:   post1.ID,
+		ParentID: &comment1.ID,
+	}
+	comment7 := models.Comment{
+		Message: "Iron Man's armor is incredible!",
+		UserID:  clark.ID,
+		PostID:  post1.ID,
+	}
+	comment8 := models.Comment{
+		Message:  "Yeah I really like how He used it when fighting against Thanos",
+		UserID:   clark.ID,
+		PostID:   post1.ID,
+		ParentID: &comment7.ID,
+	}
 	comment2 := models.Comment{
 		Message: "Captain America's shield is iconic!",
 		UserID:  steve.ID,
@@ -72,6 +89,9 @@ func Seed(db *gorm.DB) {
 	}
 
 	db.Create(&comment1)
+	db.Create(&comment6)
+	db.Create(&comment7)
+	db.Create(&comment8)
 	db.Create(&comment2)
 	db.Create(&comment3)
 	db.Create(&comment4)

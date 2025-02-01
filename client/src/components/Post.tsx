@@ -4,7 +4,7 @@ import { CommentList } from "./CommentList";
 export const Post = () => {
   const { post, rootComments, getReplies } = usePostContext();
   return (
-    <>
+    <div className="container">
       <h1>{post?.title}</h1>
       <p>{post?.body}</p>
 
@@ -16,6 +16,6 @@ export const Post = () => {
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 };
