@@ -5,6 +5,9 @@ import { Button } from "react-bootstrap";
 import { usePostContext } from "../contexts/PostContext";
 import { CommentList } from "./CommentList";
 import { useState } from "react";
+import { CommentForm } from "./CommentForm";
+import { useAsyncFn } from "../hooks/useAsync";
+import { createComment } from "../services/comments";
 
 type CommentProps = {
   id: string;
@@ -33,9 +36,34 @@ export const Comment = ({
   parentId,
   user,
 }: CommentProps) => {
-  const { getReplies } = usePostContext();
+  const {
+    createLocalComment,
+    updateLocalComment,
+    deleteLocalComment,
+    getReplies,
+    toggleLocalCommentLike,
+    rootComments,
+    post,
+  } = usePostContext();
+  const {
+    loading,
+    error,
+    execute: createCommentFunc,
+  } = useAsyncFn(createComment);
   const childComments = getReplies(id);
   const [areChildrenHidden, setAreChildrenHidden] = useState(true);
+  const [isReplying, setIsReplying] = useState(false);
+
+  const onCommentReply = async (message: string) => {
+    const newComment = await createCommentFunc({
+      postId: post?.id || "",
+      message,
+      parentId: id,
+    });
+
+    setIsReplying(false);
+    createLocalComment(newComment);
+  };
 
   return (
     <>
@@ -60,9 +88,12 @@ export const Comment = ({
               {likeCount}
             </IconButton>
             <IconButton
+              aria-label={isReplying ? "Cancel Reply" : "Reply"}
               Icon={FaReply}
-              isActive={likedByMe}
-              onClick={() => {}}
+              isActive={isReplying}
+              onClick={() => {
+                setIsReplying(!isReplying);
+              }}
               color="blue"
             />
             <IconButton
@@ -81,6 +112,20 @@ export const Comment = ({
           </div>
         </div>
       </div>
+
+      {isReplying && (
+        <div className="card mb-2">
+          <div className="card-body">
+            <CommentForm
+              autoFocus={true}
+              loading={loading}
+              error={error}
+              onSubmit={onCommentReply}
+              initialValue={`@${user.name}`}
+            />
+          </div>
+        </div>
+      )}
 
       {childComments != null && childComments?.length > 0 && (
         <>
