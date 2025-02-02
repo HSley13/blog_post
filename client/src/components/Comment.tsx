@@ -7,7 +7,7 @@ import { CommentList } from "./CommentList";
 import { useState } from "react";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
-import { createComment } from "../services/comments";
+import { createComment, updateComment } from "../services/comments";
 
 type CommentProps = {
   id: string;
@@ -45,17 +45,15 @@ export const Comment = ({
     rootComments,
     post,
   } = usePostContext();
-  const {
-    loading,
-    error,
-    execute: createCommentFunc,
-  } = useAsyncFn(createComment);
+  const createCommentFunc = useAsyncFn(createComment);
+  const updateCommentFunc = useAsyncFn(updateComment);
   const childComments = getReplies(id);
   const [areChildrenHidden, setAreChildrenHidden] = useState(true);
   const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const onCommentReply = async (message: string) => {
-    const newComment = await createCommentFunc({
+    const newComment = await createCommentFunc.execute({
       postId: post?.id || "",
       message,
       parentId: id,
@@ -63,6 +61,17 @@ export const Comment = ({
 
     setIsReplying(false);
     createLocalComment(newComment);
+  };
+
+  const onCommentUpdate = async (message: string) => {
+    const updatedComment = await updateCommentFunc.execute({
+      postId: post?.id || "",
+      id,
+      message,
+    });
+
+    setIsEditing(false);
+    updateLocalComment(updatedComment.id, updatedComment.message);
   };
 
   return (
@@ -76,7 +85,17 @@ export const Comment = ({
             </span>
           </div>
 
-          <div className="mb-3">{message}</div>
+          {isEditing ? (
+            <CommentForm
+              autoFocus={true}
+              initialValue={message}
+              loading={updateCommentFunc.loading}
+              error={updateCommentFunc.error}
+              onSubmit={onCommentUpdate}
+            />
+          ) : (
+            <div className="mb-3">{message}</div>
+          )}
 
           <div className="d-flex gap-1">
             <IconButton
@@ -97,9 +116,12 @@ export const Comment = ({
               color="blue"
             />
             <IconButton
+              aria-label={isEditing ? "Cancel Edit" : "Edit"}
               Icon={FaEdit}
-              isActive={likedByMe}
-              onClick={() => {}}
+              isActive={isEditing}
+              onClick={() => {
+                setIsEditing(!isEditing);
+              }}
               color="blue"
             />
             <IconButton
@@ -118,8 +140,8 @@ export const Comment = ({
           <div className="card-body">
             <CommentForm
               autoFocus={true}
-              loading={loading}
-              error={error}
+              loading={createCommentFunc.loading}
+              error={createCommentFunc.error}
               onSubmit={onCommentReply}
               initialValue={`@${user.name}`}
             />

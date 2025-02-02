@@ -39,14 +39,12 @@ export const CommentForm = ({
         </Col>
         <Col xs="auto">
           <Button type="submit" variant="primary" disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
+            {loading ? "Posting..." : "Post"}
           </Button>
         </Col>
       </Row>
 
-      {error && (
-        <div className="text-danger mt-2">{error.message}</div> // Display error message
-      )}
+      {error && <div className="text-danger mt-2">{error.message}</div>}
     </Form>
   );
 };
