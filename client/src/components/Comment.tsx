@@ -1,6 +1,7 @@
 import { IconButton } from "./IconButton";
 import { FaReply, FaHeart, FaEdit, FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Button } from "react-bootstrap";
 import { usePostContext } from "../contexts/PostContext";
 import { CommentList } from "./CommentList";
 import { useState } from "react";
@@ -51,7 +52,6 @@ export const Comment = ({
 
           <div className="d-flex gap-1">
             <IconButton
-              aria-label="Like"
               Icon={FaHeart}
               isActive={likedByMe}
               onClick={() => {}}
@@ -60,24 +60,22 @@ export const Comment = ({
               {likeCount}
             </IconButton>
             <IconButton
-              aria-label="Reply"
               Icon={FaReply}
               isActive={likedByMe}
               onClick={() => {}}
               color="blue"
             />
             <IconButton
-              aria-label="Edit"
               Icon={FaEdit}
               isActive={likedByMe}
               onClick={() => {}}
               color="blue"
             />
             <IconButton
-              aria-label="Delete"
               Icon={FaTrash}
               isActive={likedByMe}
               onClick={() => {}}
+              variant="danger"
               color="red"
             />
           </div>
@@ -86,43 +84,22 @@ export const Comment = ({
 
       {childComments != null && childComments?.length > 0 && (
         <>
-          <div
-            className="nested-comments-stack mb-2"
-            style={{ position: "relative", marginLeft: "20px" }}
-          >
+          <div className="position-relative mb-2">
             <div
-              style={{
-                position: "absolute",
-                left: "-20px",
-                top: "0",
-                bottom: "0",
-                width: "2px",
-                backgroundColor: "#ccc",
-              }}
+              className="position-absolute start-0 top-0 bottom-0"
+              style={{ width: "2px", backgroundColor: "#ccc" }}
             />
 
-            <button
-              aria-label="Hide Replies"
-              className="mb-2"
+            <Button
+              variant="primary"
+              className="rounded-pill mb-2 ms-2"
               onClick={() => setAreChildrenHidden(!areChildrenHidden)}
-              style={{
-                background: "#0079d3",
-                border: "none",
-                borderRadius: "20px",
-                cursor: "pointer",
-                padding: "5px 10px",
-                color: "white",
-                fontSize: "0.875rem",
-                fontWeight: "500",
-                marginLeft: "-10px",
-                transition: "background 0.2s ease",
-              }}
             >
               {areChildrenHidden ? "Show Replies" : "Hide Replies"}
-            </button>
+            </Button>
 
             {!areChildrenHidden && (
-              <div className="nested-comments">
+              <div className="ms-4">
                 <CommentList comments={childComments} getReplies={getReplies} />
               </div>
             )}
