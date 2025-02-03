@@ -93,7 +93,6 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add comment"})
 	}
 
-	// Preload the User relationship
 	if err := db.Preload("User").First(&comment, "id = ?", comment.ID).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve comment details"})
 	}
@@ -126,7 +125,6 @@ func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Comment not found"})
 	}
 
-	// Check if the current user is the owner of the comment
 	userID := ctx.Cookies("userId")
 	if comment.UserID != userID {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "You do not have permission to edit this comment"})
@@ -152,7 +150,6 @@ func HandleDeleteComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Comment not found"})
 	}
 
-	// Check if the current user is the owner of the comment
 	userID := ctx.Cookies("userId")
 	if comment.UserID != userID {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "You do not have permission to delete this comment"})
@@ -174,17 +171,21 @@ func HandleToggleLike(ctx *fiber.Ctx, db *gorm.DB) error {
 
 	var like models.Like
 	if err := db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like).Error; err == nil {
-		// Like exists, so remove it
 		if err := db.Delete(&like).Error; err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to remove like"})
 		}
-		return ctx.JSON(fiber.Map{"message": "Like removed", "addLike": false})
+		return ctx.JSON(fiber.Map{
+			"id":      commentID,
+			"message": "Like removed",
+			"addLike": false})
 	} else {
-		// Like does not exist, so add it
 		newLike := models.Like{UserID: userID, CommentID: commentID}
 		if err := db.Create(&newLike).Error; err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add like"})
 		}
-		return ctx.JSON(fiber.Map{"message": "Like added", "addLike": true})
+		return ctx.JSON(fiber.Map{
+			"id":      commentID,
+			"message": "Like added",
+			"addLike": true})
 	}
 }

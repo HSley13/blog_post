@@ -4,6 +4,7 @@ type AsyncFunction<T, P extends unknown[] = unknown[]> = (
   ...params: P
 ) => Promise<T>;
 
+// Define the return type for the hooks
 type UseAsyncReturn<T, P extends unknown[]> = {
   loading: boolean;
   error: Error | undefined;
@@ -11,6 +12,7 @@ type UseAsyncReturn<T, P extends unknown[]> = {
   execute: (...params: P) => Promise<T>;
 };
 
+// Define the return type for useAsync (without execute)
 type UseAsyncOnlyReturn<T, P extends unknown[]> = Omit<
   UseAsyncReturn<T, P>,
   "execute"

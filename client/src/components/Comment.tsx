@@ -1,5 +1,5 @@
 import { IconButton } from "./IconButton";
-import { FaReply, FaHeart, FaEdit, FaTrash } from "react-icons/fa";
+import { FaReply, FaHeart, FaRegHeart, FaEdit, FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Button } from "react-bootstrap";
 import { usePostContext } from "../contexts/PostContext";
@@ -7,7 +7,13 @@ import { CommentList } from "./CommentList";
 import { useState } from "react";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
-import { createComment, updateComment } from "../services/comments";
+import {
+  createComment,
+  updateComment,
+  deleteComment,
+  toggleCommentLike,
+} from "../services/comments";
+import { useUser } from "../hooks/useUser";
 
 type CommentProps = {
   id: string;
@@ -47,10 +53,13 @@ export const Comment = ({
   } = usePostContext();
   const createCommentFunc = useAsyncFn(createComment);
   const updateCommentFunc = useAsyncFn(updateComment);
+  const deleteCommentFunc = useAsyncFn(deleteComment);
+  const toggleLikeFunc = useAsyncFn(toggleCommentLike);
   const childComments = getReplies(id);
   const [areChildrenHidden, setAreChildrenHidden] = useState(true);
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const currentUser = useUser();
 
   const onCommentReply = async (message: string) => {
     const newComment = await createCommentFunc.execute({
@@ -69,9 +78,24 @@ export const Comment = ({
       id,
       message,
     });
-
     setIsEditing(false);
     updateLocalComment(updatedComment.id, updatedComment.message);
+  };
+
+  const onCommentDelete = async () => {
+    const deletedComment = await deleteCommentFunc.execute({
+      postId: post?.id || "",
+      id,
+    });
+    deleteLocalComment(deletedComment.id);
+  };
+
+  const onToggleCommentLike = async () => {
+    const toggleComment = await toggleLikeFunc.execute({
+      postId: post?.id || "",
+      id,
+    });
+    toggleLocalCommentLike(toggleComment.id, toggleComment.addLike);
   };
 
   return (
@@ -99,9 +123,11 @@ export const Comment = ({
 
           <div className="d-flex gap-1">
             <IconButton
-              Icon={FaHeart}
+              aria-label={likedByMe ? "Unlike" : "Like"}
+              Icon={likedByMe ? FaHeart : FaRegHeart}
               isActive={likedByMe}
-              onClick={() => {}}
+              onClick={onToggleCommentLike}
+              disabled={toggleLikeFunc.loading}
               color="blue"
             >
               {likeCount}
@@ -115,23 +141,31 @@ export const Comment = ({
               }}
               color="blue"
             />
-            <IconButton
-              aria-label={isEditing ? "Cancel Edit" : "Edit"}
-              Icon={FaEdit}
-              isActive={isEditing}
-              onClick={() => {
-                setIsEditing(!isEditing);
-              }}
-              color="blue"
-            />
-            <IconButton
-              Icon={FaTrash}
-              isActive={likedByMe}
-              onClick={() => {}}
-              variant="danger"
-              color="red"
-            />
+
+            {currentUser?.id === user.id && (
+              <>
+                <IconButton
+                  aria-label={isEditing ? "Cancel Edit" : "Edit"}
+                  Icon={FaEdit}
+                  isActive={isEditing}
+                  onClick={() => {
+                    setIsEditing(!isEditing);
+                  }}
+                  color="blue"
+                />
+                <IconButton
+                  Icon={FaTrash}
+                  disabled={deleteCommentFunc.loading}
+                  onClick={onCommentDelete}
+                  variant="danger"
+                  color="red"
+                />
+              </>
+            )}
           </div>
+          {deleteCommentFunc.error && (
+            <div className="text-danger mt-2">{deleteCommentFunc.error}</div>
+          )}
         </div>
       </div>
 

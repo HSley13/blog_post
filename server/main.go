@@ -32,17 +32,13 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Middleware to set user ID cookie
 	app.Use(func(ctx *fiber.Ctx) error {
-		userId := ctx.Cookies("userId")
-		if userId == "" {
-			user := getOrCreateUser(db, "Sley")
-			ctx.Cookie(&fiber.Cookie{
-				Name:    "userId",
-				Value:   user.ID,
-				Expires: time.Now().Add(24 * time.Hour),
-			})
-		}
+		user := getOrCreateUser(db, "Sley")
+		ctx.Cookie(&fiber.Cookie{
+			Name:    "userId",
+			Value:   user.ID,
+			Expires: time.Now().Add(24 * time.Hour),
+		})
 		return ctx.Next()
 	})
 
@@ -82,7 +78,6 @@ func initDb() *gorm.DB {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Enable UUID extension in PostgreSQL
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
 		log.Fatalf("Failed to enable UUID extension: %v", err)
 	}

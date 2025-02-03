@@ -16,7 +16,9 @@ func Seed(db *gorm.DB) {
 	steve := models.User{Name: "Steve Rogers (Captain America)"}
 	bruce := models.User{Name: "Bruce Wayne (Batman)"}
 	clark := models.User{Name: "Clark Kent (Superman)"}
+	sley := models.User{Name: "Sley"}
 
+	db.Create(&sley)
 	db.Create(&tony)
 	db.Create(&steve)
 	db.Create(&bruce)
@@ -66,6 +68,11 @@ func Seed(db *gorm.DB) {
 		PostID:   post1.ID,
 		ParentID: &comment7.ID,
 	}
+	comment9 := models.Comment{
+		Message: "Batman Can solo handle Iron Man",
+		UserID:  sley.ID,
+		PostID:  post1.ID,
+	}
 	comment2 := models.Comment{
 		Message: "Captain America's shield is iconic!",
 		UserID:  steve.ID,
@@ -92,6 +99,7 @@ func Seed(db *gorm.DB) {
 	db.Create(&comment6)
 	db.Create(&comment7)
 	db.Create(&comment8)
+	db.Create(&comment9)
 	db.Create(&comment2)
 	db.Create(&comment3)
 	db.Create(&comment4)
