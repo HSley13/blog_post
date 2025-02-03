@@ -6,6 +6,7 @@ import (
 	"comment/seeds"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/websocket/v2"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,7 +21,6 @@ func main() {
 	}
 
 	db := initDb()
-
 	seeds.Seed(db)
 
 	app := fiber.New()
@@ -42,6 +42,10 @@ func main() {
 		return ctx.Next()
 	})
 
+	app.Use("/ws", func(ctx *fiber.Ctx) error {
+		return handlers.HandleWebSocket(ctx)
+	})
+	app.Get("/ws", websocket.New(handlers.WebSocketHandler))
 	app.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
 	})

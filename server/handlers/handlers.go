@@ -3,7 +3,9 @@ package handlers
 import (
 	"comment/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
@@ -88,7 +90,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add post"})
 	}
 
-	return ctx.JSON(fiber.Map{
+	newPost := (fiber.Map{
 		"id":        post.ID,
 		"userId":    post.UserID,
 		"title":     post.Title,
@@ -96,6 +98,13 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 	})
+
+	BroadcastMessage(map[string]interface{}{
+		"type": "NEW_POST",
+		"data": newPost,
+	})
+
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Post added successfully"})
 }
 
 func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -178,7 +187,7 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve comment details"})
 	}
 
-	return ctx.JSON(fiber.Map{
+	newComment := fiber.Map(fiber.Map{
 		"id":        comment.ID,
 		"message":   comment.Message,
 		"parentId":  comment.ParentID,
@@ -190,6 +199,13 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likeCount": 0,
 		"likedByMe": false,
 	})
+
+	BroadcastMessage(map[string]interface{}{
+		"type": "NEW_COMMENT",
+		"data": newComment,
+	})
+
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Comment added successfully"})
 }
 
 func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -268,5 +284,34 @@ func HandleToggleLike(ctx *fiber.Ctx, db *gorm.DB) error {
 			"id":      commentID,
 			"message": "Like added",
 			"addLike": true})
+	}
+}
+
+var clients = make(map[*websocket.Conn]bool)
+
+func HandleWebSocket(c *fiber.Ctx) error {
+	if websocket.IsWebSocketUpgrade(c) {
+		c.Locals("allowed", true)
+		return c.Next()
+	}
+	return fiber.ErrUpgradeRequired
+}
+
+func WebSocketHandler(c *websocket.Conn) {
+	clients[c] = true
+	defer func() {
+		delete(clients, c)
+		c.Close()
+	}()
+}
+
+func BroadcastMessage(message interface{}) {
+	for client := range clients {
+		err := client.WriteJSON(message)
+		if err != nil {
+			log.Println("WebSocket write error:", err)
+			client.Close()
+			delete(clients, client)
+		}
 	}
 }
