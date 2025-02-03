@@ -36,6 +36,9 @@ type PostContextValue = {
   error: Error | undefined;
   getReplies: (parentId: string | null) => Comment[] | undefined;
   rootComments: Comment[] | undefined;
+  createLocalPost: (post: Post) => void;
+  updateLocalPost: (id: string, title: string, body: string) => void;
+  deleteLocalPost: (id: string) => void;
   createLocalComment: (comment: Comment) => void;
   updateLocalComment: (id: string, message: string) => void;
   deleteLocalComment: (id: string) => void;
@@ -48,6 +51,9 @@ const Context = createContext<PostContextValue>({
   error: undefined,
   getReplies: () => [],
   rootComments: [],
+  createLocalPost: () => {},
+  updateLocalPost: () => {},
+  deleteLocalPost: () => {},
   createLocalComment: () => {},
   updateLocalComment: () => {},
   deleteLocalComment: () => {},
@@ -118,6 +124,10 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     );
   };
 
+  const createLocalPost = (Post: Post) => {};
+  const updateLocalPost = (id: string, title: string, body: string) => {};
+  const deleteLocalPost = (id: string) => {};
+
   return (
     <Context.Provider
       value={{
@@ -130,6 +140,9 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
         updateLocalComment,
         deleteLocalComment,
         toggleLocalCommentLike,
+        createLocalPost,
+        updateLocalPost,
+        deleteLocalPost,
       }}
     >
       {loading ? (

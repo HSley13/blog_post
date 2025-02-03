@@ -59,10 +59,91 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 
 	return ctx.JSON(fiber.Map{
 		"id":       post.ID,
+		"userId":   post.UserID,
 		"title":    post.Title,
 		"body":     post.Body,
 		"comments": comments,
 	})
+}
+
+func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
+	var body struct {
+		UserId string `json:"userId"`
+		Title  string `json:"title"`
+		Body   string `json:"body"`
+	}
+	if err := ctx.BodyParser(&body); err != nil || body.UserId == "" || body.Title == "" || body.Body == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and body are required"})
+	}
+
+	post := models.Post{
+		UserID:    body.UserId,
+		Title:     body.Title,
+		Body:      body.Body,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := db.Create(&post).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add post"})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"id":        post.ID,
+		"userId":    post.UserID,
+		"title":     post.Title,
+		"body":      post.Body,
+		"createdAt": post.CreatedAt,
+		"updatedAt": post.UpdatedAt,
+	})
+}
+
+func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
+	postID := ctx.Params("id")
+	var body struct {
+		Title string `json:"title"`
+		Body  string `json:"body"`
+	}
+	if err := ctx.BodyParser(&body); err != nil || body.Title == "" || body.Body == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and body are required"})
+	}
+
+	var post models.Post
+	if err := db.First(&post, "id = ?", postID).Error; err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+	}
+
+	post.Title = body.Title
+	post.Body = body.Body
+	post.UpdatedAt = time.Now()
+
+	if err := db.Save(&post).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update post"})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"id":        post.ID,
+		"title":     post.Title,
+		"body":      post.Body,
+		"createdAt": post.CreatedAt,
+		"updatedAt": post.UpdatedAt,
+	})
+}
+
+func HandleDeletePost(ctx *fiber.Ctx, db *gorm.DB) error {
+	postID := ctx.Params("id")
+	var post models.Post
+	if err := db.First(&post, "id = ?", postID).Error; err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+	}
+
+	if err := db.Delete(&post).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete post"})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"id":      post.ID,
+		"message": "Post deleted successfully"})
 }
 
 func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {

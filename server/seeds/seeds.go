@@ -25,20 +25,24 @@ func Seed(db *gorm.DB) {
 	db.Create(&clark)
 
 	post1 := models.Post{
-		Title: "The Rise of Iron Man",
-		Body:  "Tony Stark, a genius inventor, builds the Iron Man suit to fight evil and protect the world. His journey from a selfish billionaire to a selfless hero is inspiring.",
+		UserID: tony.ID,
+		Title:  "The Rise of Iron Man",
+		Body:   "Tony Stark, a genius inventor, builds the Iron Man suit to fight evil and protect the world. His journey from a selfish billionaire to a selfless hero is inspiring.",
 	}
 	post2 := models.Post{
-		Title: "Captain America: The First Avenger",
-		Body:  "Steve Rogers, a frail young man, becomes Captain America after taking a super-soldier serum. He leads the fight against Hydra and becomes a symbol of hope.",
+		UserID: steve.ID,
+		Title:  "Captain America: The First Avenger",
+		Body:   "Steve Rogers, a frail young man, becomes Captain America after taking a super-soldier serum. He leads the fight against Hydra and becomes a symbol of hope.",
 	}
 	post3 := models.Post{
-		Title: "Batman: The Dark Knight",
-		Body:  "Bruce Wayne, traumatized by his parents' death, becomes Batman to fight crime in Gotham City. His no-kill rule and detective skills make him one of the greatest heroes.",
+		UserID: bruce.ID,
+		Title:  "Batman: The Dark Knight",
+		Body:   "Bruce Wayne, traumatized by his parents' death, becomes Batman to fight crime in Gotham City. His no-kill rule and detective skills make him one of the greatest heroes.",
 	}
 	post4 := models.Post{
-		Title: "Superman: Man of Steel",
-		Body:  "Clark Kent, an alien from Krypton, uses his superpowers to protect Earth as Superman. His struggle to balance his human and Kryptonian heritage is central to his story.",
+		UserID: clark.ID,
+		Title:  "Superman: Man of Steel",
+		Body:   "Clark Kent, an alien from Krypton, uses his superpowers to protect Earth as Superman. His struggle to balance his human and Kryptonian heritage is central to his story.",
 	}
 
 	db.Create(&post1)

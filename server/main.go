@@ -48,6 +48,15 @@ func main() {
 	app.Get("/posts/:id", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPost(ctx, db)
 	})
+	app.Post("/posts", func(ctx *fiber.Ctx) error {
+		return handlers.HandleAddPost(ctx, db)
+	})
+	app.Put("/posts/:id", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUpdatePost(ctx, db)
+	})
+	app.Delete("/posts/:id", func(ctx *fiber.Ctx) error {
+		return handlers.HandleDeletePost(ctx, db)
+	})
 	app.Post("/posts/:id/comments", func(ctx *fiber.Ctx) error {
 		return handlers.HandleAddComment(ctx, db)
 	})
