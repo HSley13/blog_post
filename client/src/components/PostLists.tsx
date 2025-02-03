@@ -1,18 +1,11 @@
-import { getPosts } from "../services/posts";
 import { Row, Col, Container } from "react-bootstrap";
 import { CommentCard } from "./CommentCard";
-import { useAsync } from "../hooks/useAsync";
 import { dateFormatter } from "./Comment";
-
-type Post = {
-  id: number;
-  title: string;
-  created_at: string;
-  updated_at: string;
-};
+import { Post } from "../types/types";
+import { useAllPostsContext } from "../contexts/AllPostsContext";
 
 export const PostList = () => {
-  const { loading, error, value: posts } = useAsync(getPosts);
+  const { loading, error, posts } = useAllPostsContext();
 
   if (loading) {
     return (

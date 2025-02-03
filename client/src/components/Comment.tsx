@@ -2,7 +2,7 @@ import { IconButton } from "./IconButton";
 import { FaReply, FaHeart, FaRegHeart, FaEdit, FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Button } from "react-bootstrap";
-import { usePostContext } from "../contexts/PostContext";
+import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { CommentList } from "./CommentList";
 import { useState } from "react";
 import { CommentForm } from "./CommentForm";
@@ -41,13 +41,12 @@ export const Comment = ({
   user,
 }: CommentProps) => {
   const {
-    createLocalComment,
     updateLocalComment,
     deleteLocalComment,
     getReplies,
     toggleLocalCommentLike,
     post,
-  } = usePostContext();
+  } = useSinglePostContext();
   const createCommentFunc = useAsyncFn(createComment);
   const updateCommentFunc = useAsyncFn(updateComment);
   const deleteCommentFunc = useAsyncFn(deleteComment);
@@ -65,7 +64,6 @@ export const Comment = ({
       parentId: id,
     });
     setIsReplying(false);
-    createLocalComment(newComment);
   };
 
   const onCommentUpdate = async (message: string) => {

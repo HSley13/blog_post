@@ -1,4 +1,4 @@
-import { usePostContext } from "../contexts/PostContext";
+import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { CommentList } from "./CommentList";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
@@ -6,7 +6,7 @@ import { createComment } from "../services/comments";
 import { Container } from "react-bootstrap";
 
 export const Post = () => {
-  const { createLocalComment, post, rootComments } = usePostContext();
+  const { createLocalComment, post, rootComments } = useSinglePostContext();
 
   const {
     loading,

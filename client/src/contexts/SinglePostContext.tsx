@@ -9,67 +9,59 @@ import React, {
 import { useAsync } from "../hooks/useAsync";
 import { getPost } from "../services/posts";
 import { Container } from "react-bootstrap";
+import { Comment, Post } from "../types/types";
+import { useWebSocket } from "../hooks/useWebsocket";
 
-type Comment = {
-  id: string;
-  message: string;
-  createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
-  parentId: string | null;
-  user: {
-    id: string;
-    name: string;
-  };
-};
-
-type Post = {
-  id: string;
-  title: string;
-  body: string;
-  comments: Comment[];
-};
-
-type PostContextValue = {
+type SinglePostContextValue = {
   post: Post | undefined;
   loading: boolean;
   error: Error | undefined;
   getReplies: (parentId: string | null) => Comment[] | undefined;
   rootComments: Comment[] | undefined;
-  createLocalPost: (post: Post) => void;
-  updateLocalPost: (id: string, title: string, body: string) => void;
-  deleteLocalPost: (id: string) => void;
   createLocalComment: (comment: Comment) => void;
   updateLocalComment: (id: string, message: string) => void;
   deleteLocalComment: (id: string) => void;
   toggleLocalCommentLike: (id: string, addLike: boolean) => void;
 };
 
-const Context = createContext<PostContextValue>({
+const Context = createContext<SinglePostContextValue>({
   post: undefined,
   loading: false,
   error: undefined,
   getReplies: () => [],
   rootComments: [],
-  createLocalPost: () => {},
-  updateLocalPost: () => {},
-  deleteLocalPost: () => {},
   createLocalComment: () => {},
   updateLocalComment: () => {},
   deleteLocalComment: () => {},
   toggleLocalCommentLike: () => {},
 });
 
-export const usePostContext = () => useContext(Context);
+export const useSinglePostContext = () => useContext(Context);
 
-type PostProviderProps = {
+type SinglePostProviderProps = {
   children: React.ReactNode;
 };
 
-export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
+export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
+  children,
+}) => {
   const { id } = useParams<{ id: string }>();
   const { loading, error, value: post } = useAsync(() => getPost(id), [id]);
   const [comments, setComments] = useState<Comment[]>([]);
+
+  const { comments: wsComments } = useWebSocket({
+    url: import.meta.env.VITE_WS_URL,
+  });
+
+  useEffect(() => {
+    setComments((prevComments) => {
+      const newComments = wsComments.filter(
+        (wsComment) =>
+          !prevComments.some((comment) => comment.id === wsComment.id),
+      );
+      return [...prevComments, ...newComments];
+    });
+  }, [wsComments]);
 
   useEffect(() => {
     if (post?.comments == null) return;
@@ -124,10 +116,6 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
     );
   };
 
-  const createLocalPost = (Post: Post) => {};
-  const updateLocalPost = (id: string, title: string, body: string) => {};
-  const deleteLocalPost = (id: string) => {};
-
   return (
     <Context.Provider
       value={{
@@ -140,9 +128,6 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
         updateLocalComment,
         deleteLocalComment,
         toggleLocalCommentLike,
-        createLocalPost,
-        updateLocalPost,
-        deleteLocalPost,
       }}
     >
       {loading ? (
