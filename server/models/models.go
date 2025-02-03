@@ -5,10 +5,12 @@ import (
 )
 
 type Post struct {
-	ID       string    `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()" json:"id"`
-	Title    string    `gorm:"not null;size:255" json:"title"`
-	Body     string    `gorm:"not null;type:text" json:"body"`
-	Comments []Comment `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
+	ID        string    `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()" json:"id"`
+	Title     string    `gorm:"not null;size:255" json:"title"`
+	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt time.Time `gorm:"not null;default:now();autoUpdateTime" json:"updated_at"`
+	Body      string    `gorm:"not null;type:text" json:"body"`
+	Comments  []Comment `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
 }
 
 type User struct {

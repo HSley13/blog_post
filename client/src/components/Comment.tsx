@@ -21,14 +21,13 @@ type CommentProps = {
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
-  parentId: string | null;
   user: {
     id: string;
     name: string;
   };
 };
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
+export const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
 });
@@ -39,7 +38,6 @@ export const Comment = ({
   createdAt,
   likeCount,
   likedByMe,
-  parentId,
   user,
 }: CommentProps) => {
   const {
@@ -48,7 +46,6 @@ export const Comment = ({
     deleteLocalComment,
     getReplies,
     toggleLocalCommentLike,
-    rootComments,
     post,
   } = usePostContext();
   const createCommentFunc = useAsyncFn(createComment);
@@ -67,7 +64,6 @@ export const Comment = ({
       message,
       parentId: id,
     });
-
     setIsReplying(false);
     createLocalComment(newComment);
   };
@@ -163,8 +159,11 @@ export const Comment = ({
               </>
             )}
           </div>
+
           {deleteCommentFunc.error && (
-            <div className="text-danger mt-2">{deleteCommentFunc.error}</div>
+            <div className="text-danger mt-2">
+              {deleteCommentFunc.error?.message}
+            </div>
           )}
         </div>
       </div>
@@ -201,7 +200,7 @@ export const Comment = ({
 
             {!areChildrenHidden && (
               <div className="ms-4">
-                <CommentList comments={childComments} getReplies={getReplies} />
+                <CommentList comments={childComments} />
               </div>
             )}
           </div>

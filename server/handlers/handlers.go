@@ -9,7 +9,7 @@ import (
 
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	var posts []models.Post
-	if err := db.Select("id", "title").Find(&posts).Error; err != nil {
+	if err := db.Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve posts"})
 	}
 	return ctx.JSON(posts)

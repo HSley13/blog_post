@@ -6,7 +6,6 @@ type Comment = {
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
-  parentId: string | null;
   user: {
     id: string;
     name: string;
@@ -15,12 +14,11 @@ type Comment = {
 
 type CommentListProps = {
   comments: Comment[];
-  getReplies: (parentId: string | null) => Comment[] | undefined;
 };
 
-export const CommentList = ({ comments, getReplies }: CommentListProps) => {
+export const CommentList = ({ comments }: CommentListProps) => {
   return comments.map((comment) => (
-    <div key={comment.id} className="comment-stack">
+    <div key={comment.id}>
       <Comment
         id={comment.id}
         message={comment.message}
@@ -28,7 +26,6 @@ export const CommentList = ({ comments, getReplies }: CommentListProps) => {
         createdAt={comment.createdAt}
         likeCount={comment.likeCount}
         likedByMe={comment.likedByMe}
-        parentId={comment.parentId}
       />
     </div>
   ));

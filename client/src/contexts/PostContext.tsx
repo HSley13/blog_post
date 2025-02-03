@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useAsync } from "../hooks/useAsync";
 import { getPost } from "../services/posts";
+import { Container } from "react-bootstrap";
 
 type Comment = {
   id: string;
@@ -132,9 +133,13 @@ export const PostProvider: React.FC<PostProviderProps> = ({ children }) => {
       }}
     >
       {loading ? (
-        <div>Loading...</div>
+        <Container className="text-center my-5">
+          <h1>Loading...</h1>
+        </Container>
       ) : error ? (
-        <div>{error.message}</div>
+        <Container className="text-center my-5">
+          <h1>{error.message}</h1>
+        </Container>
       ) : (
         children
       )}
