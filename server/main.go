@@ -2,14 +2,11 @@ package main
 
 import (
 	"comment/handlers"
-	"comment/models"
 	"comment/seeds"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/websocket/v2"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"log"
 	"os"
 	"time"
@@ -20,7 +17,7 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	db := initDb()
+	db := handlers.InitDb()
 	seeds.Seed(db)
 
 	app := fiber.New()
@@ -31,9 +28,8 @@ func main() {
 		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
 		AllowCredentials: true,
 	}))
-
 	app.Use(func(ctx *fiber.Ctx) error {
-		user := getOrCreateUser(db, "Sley")
+		user := handlers.GetOrCreateUser(db, "Sley")
 		ctx.Cookie(&fiber.Cookie{
 			Name:    "userId",
 			Value:   user.ID,
@@ -41,10 +37,10 @@ func main() {
 		})
 		return ctx.Next()
 	})
-
 	app.Use("/ws", func(ctx *fiber.Ctx) error {
 		return handlers.HandleWebSocket(ctx)
 	})
+
 	app.Get("/ws", websocket.New(handlers.WebSocketHandler))
 	app.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
@@ -82,34 +78,4 @@ func main() {
 	if err := app.Listen(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-func initDb() *gorm.DB {
-	dsn := os.Getenv("DATABASE_URL")
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-		log.Fatalf("Failed to enable UUID extension: %v", err)
-	}
-
-	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.Like{})
-	if err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
-
-	return db
-}
-
-func getOrCreateUser(db *gorm.DB, username string) models.User {
-	var user models.User
-	if err := db.Where("name = ?", username).First(&user).Error; err != nil {
-		user = models.User{Name: username}
-		if createErr := db.Create(&user).Error; createErr != nil {
-			log.Fatalf("Failed to create user: %v", createErr)
-		}
-	}
-	return user
 }

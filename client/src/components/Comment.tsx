@@ -41,6 +41,7 @@ export const Comment = ({
   user,
 }: CommentProps) => {
   const {
+    createLocalComment,
     updateLocalComment,
     deleteLocalComment,
     getReplies,
@@ -64,6 +65,7 @@ export const Comment = ({
       parentId: id,
     });
     setIsReplying(false);
+    // createLocalComment(newComment);
   };
 
   const onCommentUpdate = async (message: string) => {

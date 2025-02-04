@@ -49,23 +49,9 @@ export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
   const { loading, error, value: post } = useAsync(() => getPost(id), [id]);
   const [comments, setComments] = useState<Comment[]>([]);
 
-  const { comments: wsComments } = useWebSocket({
-    url: import.meta.env.VITE_WS_URL,
-  });
-
-  useEffect(() => {
-    setComments((prevComments) => {
-      const newComments = wsComments.filter(
-        (wsComment) =>
-          !prevComments.some((comment) => comment.id === wsComment.id),
-      );
-      return [...prevComments, ...newComments];
-    });
-  }, [wsComments]);
-
   useEffect(() => {
     if (post?.comments == null) return;
-    setComments(post.comments);
+    setComments([...post.comments]);
   }, [post?.comments]);
 
   const commentsByParentId = useMemo(() => {

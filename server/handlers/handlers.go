@@ -4,10 +4,42 @@ import (
 	"comment/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"os"
 	"time"
 )
+
+func InitDb() *gorm.DB {
+	dsn := os.Getenv("DATABASE_URL")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
+		log.Fatalf("Failed to enable UUID extension: %v", err)
+	}
+
+	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.Like{})
+	if err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
+
+	return db
+}
+
+func GetOrCreateUser(db *gorm.DB, username string) models.User {
+	var user models.User
+	if err := db.Where("name = ?", username).First(&user).Error; err != nil {
+		user = models.User{Name: username}
+		if createErr := db.Create(&user).Error; createErr != nil {
+			log.Fatalf("Failed to create user: %v", createErr)
+		}
+	}
+	return user
+}
 
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	var posts []models.Post
@@ -104,7 +136,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"data": newPost,
 	})
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Post added successfully"})
+	return ctx.Status(fiber.StatusCreated).JSON(newPost)
 }
 
 func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -205,7 +237,7 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		"data": newComment,
 	})
 
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Comment added successfully"})
+	return ctx.Status(fiber.StatusCreated).JSON(newComment)
 }
 
 func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -298,6 +330,7 @@ func HandleWebSocket(c *fiber.Ctx) error {
 }
 
 func WebSocketHandler(c *websocket.Conn) {
+	log.Println("WebSocket client connected")
 	clients[c] = true
 	defer func() {
 		delete(clients, c)
@@ -306,6 +339,7 @@ func WebSocketHandler(c *websocket.Conn) {
 }
 
 func BroadcastMessage(message interface{}) {
+	log.Println("Broadcasting new message")
 	for client := range clients {
 		err := client.WriteJSON(message)
 		if err != nil {

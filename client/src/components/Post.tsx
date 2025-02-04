@@ -15,11 +15,11 @@ export const Post = () => {
   } = useAsyncFn(createComment);
 
   const onCommentSubmit = async (message: string) => {
-    const newComment = await createCommentFunc({
+    const comment = await createCommentFunc({
       postId: post?.id || "",
       message,
     });
-    createLocalComment(newComment);
+    // createLocalComment(comment);
   };
 
   return (
