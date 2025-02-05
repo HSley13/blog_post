@@ -1,6 +1,7 @@
 package main
 
 import (
+	"comment/db_aws"
 	"comment/handlers"
 	"comment/seeds"
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +18,7 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	db := handlers.InitDb()
+	db := db_aws.InitDb()
 	seeds.Seed(db)
 
 	app := fiber.New()
@@ -29,7 +30,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 	app.Use(func(ctx *fiber.Ctx) error {
-		user := handlers.GetOrCreateUser(db, "Sley")
+		user := db_aws.GetOrCreateUser(db, "Sley")
 		ctx.Cookie(&fiber.Cookie{
 			Name:    "userId",
 			Value:   user.ID,
