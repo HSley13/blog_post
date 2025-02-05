@@ -19,7 +19,7 @@ export const Post = () => {
       postId: post?.id || "",
       message,
     });
-    // createLocalComment(comment);
+    createLocalComment(comment);
   };
 
   return (

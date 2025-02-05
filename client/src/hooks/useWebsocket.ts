@@ -24,9 +24,10 @@ export const useWebSocket = ({ url }: WebSocketProps) => {
     ws.onmessage = (event: MessageEvent) => {
       const message: Message = JSON.parse(event.data);
       if (message.type === "NEW_POST") {
+        console.log("New Post received");
         setPosts((prevPosts) => [message.data, ...prevPosts]);
       } else if (message.type === "NEW_COMMENT") {
-        console.log("New message received");
+        console.log("New Comment received");
         setComments((prevComments) => [message.data, ...prevComments]);
       }
     };

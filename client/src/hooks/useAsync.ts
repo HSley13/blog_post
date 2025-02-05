@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 
+// Define the type for an async function
 type AsyncFunction<T, P extends unknown[] = unknown[]> = (
   ...params: P
 ) => Promise<T>;
@@ -29,6 +30,7 @@ export const useAsync = <T, P extends unknown[] = unknown[]>(
     true,
   );
 
+  // Automatically execute the function when dependencies change
   useEffect(() => {
     execute();
   }, [execute]);
@@ -54,6 +56,7 @@ const useAsyncInternal = <T, P extends unknown[] = unknown[]>(
   const [error, setError] = useState<Error | undefined>(undefined);
   const [value, setValue] = useState<T | undefined>(undefined);
 
+  // Memoize the execute function to prevent unnecessary re-renders
   const execute = useCallback(
     async (...params: P) => {
       setLoading(true);

@@ -21,7 +21,7 @@ type createPostProps = {
 };
 export const createPost = async ({ userId, title, body }: createPostProps) => {
   const response = await makeRequest({
-    url: "/posts",
+    url: "/posts/",
     options: {
       method: "POST",
       data: { userId, title, body },

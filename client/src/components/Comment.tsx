@@ -65,7 +65,7 @@ export const Comment = ({
       parentId: id,
     });
     setIsReplying(false);
-    // createLocalComment(newComment);
+    createLocalComment(newComment);
   };
 
   const onCommentUpdate = async (message: string) => {
@@ -93,7 +93,6 @@ export const Comment = ({
     });
     toggleLocalCommentLike(toggleComment.id, toggleComment.addLike);
   };
-
   return (
     <>
       <div className="card mb-2">

@@ -131,10 +131,9 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"updatedAt": post.UpdatedAt,
 	})
 
-	BroadcastMessage(map[string]interface{}{
-		"type": "NEW_POST",
-		"data": newPost,
-	})
+	// BroadcastMessage(map[string]interface{}{
+	// 	"type": "NEW_POST",
+	// 	"data": newPost,
 
 	return ctx.Status(fiber.StatusCreated).JSON(newPost)
 }
@@ -232,10 +231,10 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likedByMe": false,
 	})
 
-	BroadcastMessage(map[string]interface{}{
-		"type": "NEW_COMMENT",
-		"data": newComment,
-	})
+	// BroadcastMessage(map[string]interface{}{
+	// 	"type": "NEW_COMMENT",
+	// 	"data": newComment,
+	// })
 
 	return ctx.Status(fiber.StatusCreated).JSON(newComment)
 }
@@ -334,6 +333,7 @@ func WebSocketHandler(c *websocket.Conn) {
 	clients[c] = true
 	defer func() {
 		delete(clients, c)
+		log.Println("WebSocket client disconnected")
 		c.Close()
 	}()
 }

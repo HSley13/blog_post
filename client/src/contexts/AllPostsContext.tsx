@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState, useContext } from "react";
 import { useAsync } from "../hooks/useAsync";
-import { useWebSocket } from "../hooks/useWebsocket";
+// import { useWebSocket } from "../hooks/useWebsocket";
 import { getPosts } from "../services/posts";
 import { Container } from "react-bootstrap";
 import { Post } from "../types/types";
@@ -41,36 +41,36 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     }
   }, [allPosts]);
 
-  const wsUrl = import.meta.env.VITE_SOCKET_URL;
-  const { posts: wsPosts, comments: wsComments } = useWebSocket({
-    url: wsUrl,
-  });
-
-  useEffect(() => {
-    setPosts((prevPosts) => {
-      const newPosts = wsPosts.filter(
-        (wsPost) => !prevPosts.some((post) => post.id === wsPost.id),
-      );
-      return [...newPosts, ...prevPosts];
-    });
-  }, [wsPosts]);
-
-  useEffect(() => {
-    setPosts((prevPosts) => {
-      return prevPosts.map((post) => {
-        const newComments = wsComments.filter(
-          (wsComment) => wsComment.postId === post.id,
-        );
-        if (newComments.length > 0) {
-          return {
-            ...post,
-            comments: [...post.comments, ...newComments],
-          };
-        }
-        return post;
-      });
-    });
-  }, [wsComments]);
+  // const wsUrl = import.meta.env.VITE_SOCKET_URL;
+  // const { posts: wsPosts, comments: wsComments } = useWebSocket({
+  //   url: wsUrl,
+  // });
+  //
+  // useEffect(() => {
+  //   setPosts((prevPosts) => {
+  //     const newPosts = wsPosts.filter(
+  //       (wsPost) => !prevPosts.some((post) => post.id === wsPost.id),
+  //     );
+  //     return [...newPosts, ...prevPosts];
+  //   });
+  // }, [wsPosts]);
+  //
+  // useEffect(() => {
+  //   setPosts((prevPosts) => {
+  //     return prevPosts.map((post) => {
+  //       const newComments = wsComments.filter(
+  //         (wsComment) => wsComment.postId === post.id,
+  //       );
+  //       if (newComments.length > 0) {
+  //         return {
+  //           ...post,
+  //           comments: [...post.comments, ...newComments],
+  //         };
+  //       }
+  //       return post;
+  //     });
+  //   });
+  // }, [wsComments]);
 
   const createLocalPost = (post: Post) => {
     setPosts((prevPosts) => [post, ...prevPosts]);

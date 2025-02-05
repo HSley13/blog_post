@@ -5,7 +5,7 @@ import (
 	"comment/seeds"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/websocket/v2"
+	// "github.com/gofiber/websocket/v2"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -37,18 +37,17 @@ func main() {
 		})
 		return ctx.Next()
 	})
-	app.Use("/ws", func(ctx *fiber.Ctx) error {
-		return handlers.HandleWebSocket(ctx)
-	})
-
-	app.Get("/ws", websocket.New(handlers.WebSocketHandler))
+	// app.Use("/ws", func(ctx *fiber.Ctx) error {
+	// 	return handlers.HandleWebSocket(ctx)
+	// })
+	// app.Get("/ws", websocket.New(handlers.WebSocketHandler))
 	app.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
 	})
 	app.Get("/posts/:id", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPost(ctx, db)
 	})
-	app.Post("/posts", func(ctx *fiber.Ctx) error {
+	app.Post("/posts/", func(ctx *fiber.Ctx) error {
 		return handlers.HandleAddPost(ctx, db)
 	})
 	app.Put("/posts/:id", func(ctx *fiber.Ctx) error {
