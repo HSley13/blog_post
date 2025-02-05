@@ -4,9 +4,13 @@ import (
 	"comment/db_aws"
 	"comment/handlers"
 	"comment/seeds"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	// "github.com/gofiber/websocket/v2"
+	"context"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -16,6 +20,17 @@ import (
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: .env file not found")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-1"))
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
+	s3Client := s3.NewFromConfig(cfg)
+
+	if s3Client != nil {
+		log.Println("AWS connection established...")
 	}
 
 	db := db_aws.InitDb()

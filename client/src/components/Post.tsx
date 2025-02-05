@@ -1,26 +1,29 @@
 import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { IconButton } from "./IconButton";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { CommentList } from "./CommentList";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
 import { createComment } from "../services/comments";
 import { Container, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { PostForm } from "./PostForm";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { useState } from "react";
-import { updatePost } from "../services/posts";
+import { updatePost, deletePost } from "../services/posts";
 
 export const Post = () => {
   const { createLocalComment, post, rootComments } = useSinglePostContext();
-  const { updateLocalPost } = useAllPostsContext();
-  const currentUser = useUser();
+  const { updateLocalPost, deleteLocalPost } = useAllPostsContext();
   const [isEditing, setIsEditing] = useState(false);
+  const currentUser = useUser();
+  const navigate = useNavigate();
 
   const createCommentFunc = useAsyncFn(createComment);
 
   const updatePostFn = useAsyncFn(updatePost);
+  const deletePostFn = useAsyncFn(deletePost);
 
   const onPostSubmit = async (title: string, body: string) => {
     const updatedPost = await updatePostFn.execute({
@@ -35,6 +38,14 @@ export const Post = () => {
       updatedPost.updatedAt,
     );
     setIsEditing(false);
+  };
+
+  const onDeletePost = async () => {
+    await deletePostFn.execute({
+      id: post?.id.toString() || "",
+    });
+    deleteLocalPost(post?.id || "");
+    navigate("/");
   };
 
   const onCommentSubmit = async (message: string) => {
@@ -65,11 +76,20 @@ export const Post = () => {
           <Row>
             <Col xs={12} className="d-flex justify-content-between">
               <h1>{post?.title}</h1>
-              <IconButton
-                Icon={FaEdit}
-                color="blue"
-                onClick={() => setIsEditing(true)}
-              />
+              <Col xs="auto">
+                <IconButton
+                  Icon={FaEdit}
+                  color="blue"
+                  onClick={() => setIsEditing(true)}
+                />
+                {!isEditing && (
+                  <IconButton
+                    Icon={FaTrash}
+                    color="red"
+                    onClick={onDeletePost}
+                  />
+                )}
+              </Col>
             </Col>
 
             <Col xs={12}>

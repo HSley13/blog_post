@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"comment/models"
-	"github.com/aws/aws-sdk-go/aws"
-	// "github.com/aws/aws-sdk-go/aws/credentials"
-	// "github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	// "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -81,6 +81,14 @@ func VerifyPassword(password string, hashedPassword string) (bool, error) {
 	computedHash := argon2.IDKey([]byte(password), salt, iterations, memory, uint8(parallelism), keyLength)
 
 	return string(computedHash) == string(storedHash), nil
+}
+
+func NewS3Client(ctx context.Context) (*s3.Client, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %v", err)
+	}
+	return s3.NewFromConfig(cfg), nil
 }
 
 func GetDataFromS3(ctx context.Context, s3Client *s3.Client, key string) (string, error) {
