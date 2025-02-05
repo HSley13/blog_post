@@ -179,7 +179,7 @@ func InitDb() *gorm.DB {
 		log.Fatalf("Failed to enable UUID extension: %v", err)
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.Like{})
+	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.PostLike{}, &models.CommentLike{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

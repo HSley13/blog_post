@@ -72,6 +72,9 @@ func main() {
 	app.Delete("/posts/:id", func(ctx *fiber.Ctx) error {
 		return handlers.HandleDeletePost(ctx, db)
 	})
+	app.Post("/posts/:postId/toggleLike", func(ctx *fiber.Ctx) error {
+		return handlers.HandleToggleLikePost(ctx, db)
+	})
 	app.Post("/posts/:id/comments", func(ctx *fiber.Ctx) error {
 		return handlers.HandleAddComment(ctx, db)
 	})
@@ -82,7 +85,7 @@ func main() {
 		return handlers.HandleDeleteComment(ctx, db)
 	})
 	app.Post("/posts/:postId/comments/:commentId/toggleLike", func(ctx *fiber.Ctx) error {
-		return handlers.HandleToggleLike(ctx, db)
+		return handlers.HandleToggleCommentLike(ctx, db)
 	})
 
 	port := os.Getenv("PORT")

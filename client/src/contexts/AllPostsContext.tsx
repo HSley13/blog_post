@@ -18,6 +18,7 @@ type AllPostsContextValue = {
     imageUrl?: string,
   ) => void;
   deleteLocalPost: (id: string) => void;
+  toggleLocalPostLike: (id: string, addLike: boolean) => void;
 };
 
 const Context = createContext<AllPostsContextValue>({
@@ -27,6 +28,7 @@ const Context = createContext<AllPostsContextValue>({
   createLocalPost: () => {},
   updateLocalPost: () => {},
   deleteLocalPost: () => {},
+  toggleLocalPostLike: () => {},
 });
 
 export const useAllPostsContext = () => useContext(Context);
@@ -100,6 +102,20 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
   };
 
+  const toggleLocalPostLike = (id: string, addLike: boolean) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === id
+          ? {
+              ...post,
+              likeCount: post.likeCount + (addLike ? 1 : -1),
+              likedByMe: addLike,
+            }
+          : post,
+      ),
+    );
+  };
+
   return (
     <Context.Provider
       value={{
@@ -109,6 +125,7 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
         createLocalPost,
         updateLocalPost,
         deleteLocalPost,
+        toggleLocalPostLike,
       }}
     >
       {loading ? (

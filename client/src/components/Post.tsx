@@ -1,6 +1,6 @@
 import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { IconButton } from "./IconButton";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaHeart, FaRegHeart } from "react-icons/fa";
 import { CommentList } from "./CommentList";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
@@ -11,11 +11,12 @@ import { useUser } from "../hooks/useUser";
 import { PostForm } from "./PostForm";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { useState } from "react";
-import { updatePost, deletePost } from "../services/posts";
+import { updatePost, deletePost, togglePostLike } from "../services/posts";
 
 export const Post = () => {
   const { createLocalComment, post, rootComments } = useSinglePostContext();
-  const { updateLocalPost, deleteLocalPost } = useAllPostsContext();
+  const { updateLocalPost, deleteLocalPost, toggleLocalPostLike } =
+    useAllPostsContext();
   const [isEditing, setIsEditing] = useState(false);
   const currentUser = useUser();
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export const Post = () => {
 
   const updatePostFn = useAsyncFn(updatePost);
   const deletePostFn = useAsyncFn(deletePost);
+  const togglePostLikeFn = useAsyncFn(togglePostLike);
 
   const onPostSubmit = async (title: string, body: string) => {
     const updatedPost = await updatePostFn.execute({
@@ -31,13 +33,13 @@ export const Post = () => {
       title: title,
       body: body,
     });
+    setIsEditing(false);
     updateLocalPost(
       updatedPost.id,
       updatedPost.title,
       updatedPost.body,
       updatedPost.updatedAt,
     );
-    setIsEditing(false);
   };
 
   const onDeletePost = async () => {
@@ -46,6 +48,13 @@ export const Post = () => {
     });
     deleteLocalPost(post?.id || "");
     navigate("/");
+  };
+
+  const onTogglePostLike = async () => {
+    const togglePost = await togglePostLikeFn.execute({
+      id: post?.id.toString() || "",
+    });
+    toggleLocalPostLike(togglePost.id, togglePost.addLike);
   };
 
   const onCommentSubmit = async (message: string) => {
@@ -78,6 +87,17 @@ export const Post = () => {
               <h1>{post?.title}</h1>
               <Col xs="auto">
                 <IconButton
+                  aria-label={post?.likedByMe ? "Unlike" : "Like"}
+                  isActive={post?.likedByMe}
+                  disabled={togglePostLikeFn.loading}
+                  Icon={post?.likedByMe ? FaHeart : FaRegHeart}
+                  onClick={onTogglePostLike}
+                  color="blue"
+                >
+                  {post?.likeCount}
+                </IconButton>
+                <IconButton
+                  aria-label={isEditing ? "Cancel Edit" : "Edit"}
                   Icon={FaEdit}
                   color="blue"
                   onClick={() => setIsEditing(true)}
@@ -99,7 +119,19 @@ export const Post = () => {
         )
       ) : (
         <>
-          <h1>{post?.title}</h1>
+          <Col xs={12} className="d-flex justify-content-between">
+            <h1>{post?.title}</h1>
+            <IconButton
+              aria-label={post?.likedByMe ? "Unlike" : "Like"}
+              isActive={post?.likedByMe}
+              disabled={togglePostLikeFn.loading}
+              Icon={post?.likedByMe ? FaHeart : FaRegHeart}
+              onClick={onTogglePostLike}
+              color="blue"
+            >
+              {post?.likeCount}
+            </IconButton>
+          </Col>
           <p>{post?.body}</p>
         </>
       )}

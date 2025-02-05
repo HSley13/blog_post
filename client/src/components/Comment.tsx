@@ -93,6 +93,7 @@ export const Comment = ({
     });
     toggleLocalCommentLike(toggleComment.id, toggleComment.addLike);
   };
+
   return (
     <>
       <div className="card mb-2">
@@ -152,7 +153,6 @@ export const Comment = ({
                   Icon={FaTrash}
                   disabled={deleteCommentFunc.loading}
                   onClick={onCommentDelete}
-                  variant="danger"
                   color="red"
                 />
               </>

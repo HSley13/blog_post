@@ -17,7 +17,40 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	if err := db.Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve posts"})
 	}
-	return ctx.JSON(posts)
+
+	userID := ctx.Cookies("userId")
+	var userPostLikes []models.PostLike
+	if userID != "" {
+		if err := db.Where("user_id = ?", userID).Find(&userPostLikes).Error; err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user post likes"})
+		}
+	}
+
+	var postsWithLikes []fiber.Map
+	for _, post := range posts {
+		var likeCount int64
+		if err := db.Model(&models.PostLike{}).Where("post_id = ?", post.ID).Count(&likeCount).Error; err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to count post likes"})
+		}
+
+		likedByMe := false
+		for _, like := range userPostLikes {
+			if like.PostID == post.ID {
+				likedByMe = true
+				break
+			}
+		}
+
+		postsWithLikes = append(postsWithLikes, fiber.Map{
+			"id":        post.ID,
+			"title":     post.Title,
+			"likeCount": likeCount,
+			"likedByMe": likedByMe,
+			"updatedAt": post.UpdatedAt,
+		})
+	}
+
+	return ctx.JSON(postsWithLikes)
 }
 
 func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -31,18 +64,23 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
 	}
 
+	// Fetch the post with its likes
+	if err := db.Preload("Likes").First(&post, "id = ?", postID).Error; err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+	}
+
 	// Get the current user's likes
 	userID := ctx.Cookies("userId")
-	var userLikes []models.Like
-	if err := db.Where("user_id = ?", userID).Find(&userLikes).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user likes"})
+	var userCommentLikes []models.CommentLike
+	if err := db.Where("user_id = ?", userID).Find(&userCommentLikes).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user comment likes"})
 	}
 
 	// Map comments with like information
 	var comments []fiber.Map
 	for _, comment := range post.Comments {
 		likedByMe := false
-		for _, like := range userLikes {
+		for _, like := range userCommentLikes {
 			if like.CommentID == comment.ID {
 				likedByMe = true
 				break
@@ -62,12 +100,27 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		})
 	}
 
+	var userPostLikes []models.PostLike
+	if err := db.Where("user_id = ?", userID).Find(&userPostLikes).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user post likes"})
+	}
+	likedByMe := false
+	for _, like := range userPostLikes {
+		if like.PostID == post.ID {
+			likedByMe = true
+			break
+		}
+	}
+
 	return ctx.JSON(fiber.Map{
-		"id":       post.ID,
-		"userId":   post.UserID,
-		"title":    post.Title,
-		"body":     post.Body,
-		"comments": comments,
+		"id":        post.ID,
+		"userId":    post.UserID,
+		"title":     post.Title,
+		"body":      post.Body,
+		"likeCount": len(post.Likes),
+		"likedByMe": likedByMe,
+		"createdAt": post.CreatedAt,
+		"comments":  comments,
 	})
 }
 
@@ -85,6 +138,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		UserID:    body.UserId,
 		Title:     body.Title,
 		Body:      body.Body,
+		Likes:     []models.PostLike{},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -98,6 +152,8 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"userId":    post.UserID,
 		"title":     post.Title,
 		"body":      post.Body,
+		"likeCount": 0,
+		"likedByMe": false,
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 	})
@@ -155,6 +211,34 @@ func HandleDeletePost(ctx *fiber.Ctx, db *gorm.DB) error {
 	return ctx.JSON(fiber.Map{
 		"id":      post.ID,
 		"message": "Post deleted successfully"})
+}
+
+func HandleToggleLikePost(ctx *fiber.Ctx, db *gorm.DB) error {
+	postID := ctx.Params("postId")
+	userID := ctx.Cookies("userId")
+	if userID == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not authenticated"})
+	}
+
+	var like models.PostLike
+	if err := db.Where("user_id = ? AND post_id = ?", userID, postID).First(&like).Error; err == nil {
+		if err := db.Delete(&like).Error; err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to remove like"})
+		}
+		return ctx.JSON(fiber.Map{
+			"id":      postID,
+			"message": "Like removed",
+			"addLike": false})
+	} else {
+		newLike := models.PostLike{UserID: userID, PostID: postID}
+		if err := db.Create(&newLike).Error; err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add like"})
+		}
+		return ctx.JSON(fiber.Map{
+			"id":      postID,
+			"message": "Like added",
+			"addLike": true})
+	}
 }
 
 func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
@@ -261,14 +345,14 @@ func HandleDeleteComment(ctx *fiber.Ctx, db *gorm.DB) error {
 	return ctx.JSON(fiber.Map{"message": "Comment deleted"})
 }
 
-func HandleToggleLike(ctx *fiber.Ctx, db *gorm.DB) error {
+func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB) error {
 	commentID := ctx.Params("commentId")
 	userID := ctx.Cookies("userId")
 	if userID == "" {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not authenticated"})
 	}
 
-	var like models.Like
+	var like models.CommentLike
 	if err := db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like).Error; err == nil {
 		if err := db.Delete(&like).Error; err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to remove like"})
@@ -278,7 +362,7 @@ func HandleToggleLike(ctx *fiber.Ctx, db *gorm.DB) error {
 			"message": "Like removed",
 			"addLike": false})
 	} else {
-		newLike := models.Like{UserID: userID, CommentID: commentID}
+		newLike := models.CommentLike{UserID: userID, CommentID: commentID}
 		if err := db.Create(&newLike).Error; err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add like"})
 		}

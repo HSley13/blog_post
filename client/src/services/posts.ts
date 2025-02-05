@@ -58,3 +58,16 @@ export const deletePost = async ({ id }: deletePostProps) => {
   });
   return response;
 };
+
+type togglePostLikeProps = {
+  id: string;
+};
+export const togglePostLike = async ({ id }: togglePostLikeProps) => {
+  const response = await makeRequest({
+    url: `/posts/${id}/toggleLike`,
+    options: {
+      method: "POST",
+    },
+  });
+  return response;
+};

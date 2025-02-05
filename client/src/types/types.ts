@@ -21,4 +21,6 @@ export type Post = {
   updated_at: string;
   imageUrl?: string;
   comments: Comment[];
+  likeCount: number;
+  likedByMe: boolean;
 };

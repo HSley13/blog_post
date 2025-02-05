@@ -1,5 +1,5 @@
 import { Row, Col, Container } from "react-bootstrap";
-import { CommentCard } from "./CommentCard";
+import { PostCard } from "./PostCard";
 import { dateFormatter } from "./Comment";
 import { Post } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
@@ -50,9 +50,11 @@ export const PostList = () => {
       <Row xs={1} md={2} xl={3} className="g-3">
         {posts?.map((post: Post) => (
           <Col key={post.id}>
-            <CommentCard
+            <PostCard
               id={post.id.toString()}
               title={post.title}
+              likeCount={post.likeCount}
+              likedByMe={post.likedByMe}
               updatedAt={dateFormatter.format(
                 Date.parse(post.updated_at || post.updatedAt),
               )}
