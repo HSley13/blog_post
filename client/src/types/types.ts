@@ -19,5 +19,6 @@ export type Post = {
   createdAt: string;
   updatedAt: string;
   updated_at: string;
+  imageUrl?: string;
   comments: Comment[];
 };

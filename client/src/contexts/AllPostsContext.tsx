@@ -10,7 +10,13 @@ type AllPostsContextValue = {
   loading: boolean;
   error: Error | undefined;
   createLocalPost: (post: Post) => void;
-  updateLocalPost: (id: string, title: string, body: string) => void;
+  updateLocalPost: (
+    id: string,
+    title: string,
+    body: string,
+    updatedAt: string,
+    imageUrl?: string,
+  ) => void;
   deleteLocalPost: (id: string) => void;
 };
 
@@ -76,10 +82,16 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     setPosts((prevPosts) => [post, ...prevPosts]);
   };
 
-  const updateLocalPost = (id: string, title: string, body: string) => {
+  const updateLocalPost = (
+    id: string,
+    title: string,
+    body: string,
+    updatedAt: string,
+    imageUrl?: string,
+  ) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === id ? { ...post, title, body } : post,
+        post.id === id ? { ...post, title, body, updatedAt, imageUrl } : post,
       ),
     );
   };

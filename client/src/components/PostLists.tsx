@@ -40,7 +40,11 @@ export const PostList = () => {
     <Container className="my-5">
       <Col className="mb-4">
         <h1 className="text-center mb-4">Create Post</h1>
-        <PostForm onSubmit={onPostSubmit} loading={loading} error={error} />
+        <PostForm
+          onSubmit={onPostSubmit}
+          loading={createPostFunc.loading}
+          error={createPostFunc.error}
+        />
       </Col>
       <h1 className="text-center mb-4">Most Recent Posts</h1>
       <Row xs={1} md={2} xl={3} className="g-3">

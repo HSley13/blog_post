@@ -6,8 +6,18 @@ type PostFormProps = {
   onSubmit: (title: string, body: string, userId: string) => void;
   loading: boolean;
   error: Error | undefined;
+  title?: string;
+  body?: string;
+  imgUrl?: string;
 };
-export const PostForm = ({ onSubmit, loading, error }: PostFormProps) => {
+export const PostForm = ({
+  onSubmit,
+  loading,
+  error,
+  title,
+  body,
+  imgUrl,
+}: PostFormProps) => {
   const titleRef = React.useRef<HTMLInputElement>(null);
   const bodyRef = React.useRef<HTMLTextAreaElement>(null);
   const currentUser = useUser();
@@ -30,6 +40,7 @@ export const PostForm = ({ onSubmit, loading, error }: PostFormProps) => {
           <Form.Control
             type="text"
             ref={titleRef}
+            defaultValue={title || ""}
             placeholder="Add title"
             disabled={loading}
           />
@@ -43,6 +54,7 @@ export const PostForm = ({ onSubmit, loading, error }: PostFormProps) => {
       <Col className="mb-3">
         <Form.Control
           as="textarea"
+          defaultValue={body || ""}
           ref={bodyRef}
           rows={3}
           placeholder="Add body"
