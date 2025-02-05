@@ -35,6 +35,7 @@ type Post struct {
 	Body      string     `gorm:"not null;type:text" json:"body"`
 	UserID    string     `gorm:"not null;type:uuid;index" json:"user_id"`
 	User      User       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"user"`
+	Image     string     `gorm:"type:text" json:"image"`
 	Comments  []Comment  `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
 	Likes     []PostLike `gorm:"constraint:OnDelete:CASCADE;" json:"likes"`
 }

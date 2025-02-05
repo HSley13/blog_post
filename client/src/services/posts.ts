@@ -18,13 +18,26 @@ type createPostProps = {
   userId: string;
   title: string;
   body: string;
+  file?: File;
 };
-export const createPost = async ({ userId, title, body }: createPostProps) => {
+export const createPost = async ({
+  userId,
+  title,
+  body,
+  file,
+}: createPostProps) => {
+  const formData = new FormData();
+  formData.append("userId", userId);
+  formData.append("title", title);
+  formData.append("body", body);
+  if (file) {
+    formData.append("image", file);
+  }
   const response = await makeRequest({
     url: "/posts/",
     options: {
       method: "POST",
-      data: { userId, title, body },
+      data: formData,
     },
   });
   return response;
@@ -34,13 +47,26 @@ type updatePostProps = {
   id: string;
   title: string;
   body: string;
+  file?: File;
 };
-export const updatePost = async ({ id, title, body }: updatePostProps) => {
+export const updatePost = async ({
+  id,
+  title,
+  body,
+  file,
+}: updatePostProps) => {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("body", body);
+  if (file) {
+    formData.append("image", file);
+  }
+
   const response = await makeRequest({
     url: `/posts/${id}`,
     options: {
       method: "PUT",
-      data: { title, body },
+      data: formData,
     },
   });
   return response;

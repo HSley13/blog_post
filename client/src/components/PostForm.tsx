@@ -1,9 +1,10 @@
 import { useUser } from "../hooks/useUser";
 import React from "react";
 import { Form, Button, Row, Col } from "react-bootstrap";
+import { useState } from "react";
 
 type PostFormProps = {
-  onSubmit: (title: string, body: string, userId: string) => void;
+  onSubmit: (title: string, body: string, userId: string, image: File) => void;
   loading: boolean;
   error: Error | undefined;
   title?: string;
@@ -21,6 +22,8 @@ export const PostForm = ({
   const titleRef = React.useRef<HTMLInputElement>(null);
   const bodyRef = React.useRef<HTMLTextAreaElement>(null);
   const currentUser = useUser();
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(imgUrl);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +31,20 @@ export const PostForm = ({
       titleRef.current!.value,
       bodyRef.current!.value,
       currentUser?.id || "",
+      image || new File([], ""),
     );
     titleRef.current!.value = "";
     bodyRef.current!.value = "";
+    setImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    if (file) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -45,10 +59,22 @@ export const PostForm = ({
             disabled={loading}
           />
         </Col>
-        <Col xs="auto">
-          <Button type="submit" variant="primary" disabled={loading}>
-            Submit
-          </Button>
+        <Col>
+          <Form.Group>
+            <Form.Control
+              type="file"
+              onChange={handleImageChange}
+              disabled={loading}
+            />
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="mt-2"
+                style={{ maxHeight: "200px", maxWidth: "100%" }}
+              />
+            )}
+          </Form.Group>
         </Col>
       </Row>
       <Col className="mb-3">
@@ -61,6 +87,11 @@ export const PostForm = ({
           disabled={loading}
         />
         {error && <p className="text-danger">{error.message}</p>}
+      </Col>
+      <Col className="text-end">
+        <Button type="submit" variant="primary" disabled={loading}>
+          Submit
+        </Button>
       </Col>
     </Form>
   );

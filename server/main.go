@@ -29,10 +29,6 @@ func main() {
 
 	s3Client := s3.NewFromConfig(cfg)
 
-	if s3Client != nil {
-		log.Println("AWS connection established...")
-	}
-
 	db := db_aws.InitDb()
 	seeds.Seed(db)
 
@@ -64,13 +60,13 @@ func main() {
 		return handlers.HandleGetPost(ctx, db)
 	})
 	app.Post("/posts/", func(ctx *fiber.Ctx) error {
-		return handlers.HandleAddPost(ctx, db)
+		return handlers.HandleAddPost(ctx, db, s3Client)
 	})
 	app.Put("/posts/:id", func(ctx *fiber.Ctx) error {
-		return handlers.HandleUpdatePost(ctx, db)
+		return handlers.HandleUpdatePost(ctx, db, s3Client)
 	})
 	app.Delete("/posts/:id", func(ctx *fiber.Ctx) error {
-		return handlers.HandleDeletePost(ctx, db)
+		return handlers.HandleDeletePost(ctx, db, s3Client)
 	})
 	app.Post("/posts/:postId/toggleLike", func(ctx *fiber.Ctx) error {
 		return handlers.HandleToggleLikePost(ctx, db)

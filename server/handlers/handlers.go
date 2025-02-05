@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	// "comment/db_aws"
+	"comment/db_aws"
 	"comment/models"
-	// "github.com/aws/aws-sdk-go/aws/credentials"
-	// "github.com/aws/aws-sdk-go/aws/session"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"gorm.io/gorm"
@@ -117,6 +117,7 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"userId":    post.UserID,
 		"title":     post.Title,
 		"body":      post.Body,
+		"imageUrl":  post.Image,
 		"likeCount": len(post.Likes),
 		"likedByMe": likedByMe,
 		"createdAt": post.CreatedAt,
@@ -124,21 +125,40 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 	})
 }
 
-func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
+func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	var body struct {
 		UserId string `json:"userId"`
 		Title  string `json:"title"`
 		Body   string `json:"body"`
+		Image  string `json:"image"`
 	}
+
+	if body.Image == "" {
+		log.Println("Image is empty")
+	}
+
 	if err := ctx.BodyParser(&body); err != nil || body.UserId == "" || body.Title == "" || body.Body == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and body are required"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title, body and Image are required"})
 	}
+
+	imageUrl := ""
+	var err error = nil
+	if body.Image != "" {
+		imageKey := time.Now().Format("2006-01-02-15-04-05")
+		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, body.Image)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to upload image"})
+		}
+	}
+
+	log.Println("Image URL:", imageUrl)
 
 	post := models.Post{
 		UserID:    body.UserId,
 		Title:     body.Title,
 		Body:      body.Body,
 		Likes:     []models.PostLike{},
+		Image:     imageUrl,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -156,6 +176,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likedByMe": false,
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
+		"imageUrl":  post.Image,
 	})
 
 	// BroadcastMessage(map[string]interface{}{
@@ -165,11 +186,12 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB) error {
 	return ctx.Status(fiber.StatusCreated).JSON(newPost)
 }
 
-func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
+func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	postID := ctx.Params("id")
 	var body struct {
 		Title string `json:"title"`
 		Body  string `json:"body"`
+		Image string `json:"image"`
 	}
 	if err := ctx.BodyParser(&body); err != nil || body.Title == "" || body.Body == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and body are required"})
@@ -184,6 +206,21 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
 	post.Body = body.Body
 	post.UpdatedAt = time.Now()
 
+	if body.Image != "" {
+		imageKey := time.Now().Format("2006-01-02-15-04-05")
+		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, body.Image)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to upload image"})
+		}
+
+		if imageUrl != "" {
+			post.Image = imageUrl
+		} else {
+			post.Image = ""
+			//TODO: delete image from AWS
+		}
+	}
+
 	if err := db.Save(&post).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update post"})
 	}
@@ -194,15 +231,18 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"body":      post.Body,
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
+		"imageUrl":  post.Image,
 	})
 }
 
-func HandleDeletePost(ctx *fiber.Ctx, db *gorm.DB) error {
+func HandleDeletePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	postID := ctx.Params("id")
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
 	}
+
+	//TODO: delete image from AWS
 
 	if err := db.Delete(&post).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete post"})

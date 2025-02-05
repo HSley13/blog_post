@@ -48,3 +48,11 @@ This is a web application built with **TypeScript** (for the frontend) and **Gol
 - **PostgreSQL**: Relational database for storing user data, posts, comments, and tags.
 - **AWS S3**: Cloud storage for media files like images and videos.
 - **JWT/Cookies**: For secure user authentication and session management.
+
+---
+
+## Previews
+
+![](previews/1.png)
+![](previews/2.png)
+![](previews/3.png)

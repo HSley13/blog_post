@@ -27,19 +27,25 @@ export const Post = () => {
   const deletePostFn = useAsyncFn(deletePost);
   const togglePostLikeFn = useAsyncFn(togglePostLike);
 
-  const onPostSubmit = async (title: string, body: string) => {
+  const onPostSubmit = async (title: string, body: string, image: File) => {
+    if (!image) {
+      console.log("image is undefined");
+    }
     const updatedPost = await updatePostFn.execute({
       id: post?.id.toString() || "",
       title: title,
       body: body,
+      file: image,
     });
     setIsEditing(false);
     updateLocalPost(
       updatedPost.id,
       updatedPost.title,
       updatedPost.body,
+      updatedPost.imageUrl || "",
       updatedPost.updatedAt,
     );
+    console.log("imageUrl", updatedPost.imageUrl);
   };
 
   const onDeletePost = async () => {
@@ -112,6 +118,17 @@ export const Post = () => {
               </Col>
             </Col>
 
+            <Col>
+              {post?.imageUrl && (
+                <img
+                  src={post?.imageUrl}
+                  alt="Post Image"
+                  style={{ maxWidth: "100%", height: "auto" }}
+                  className="my-3"
+                />
+              )}
+            </Col>
+
             <Col xs={12}>
               <p>{post?.body}</p>
             </Col>
@@ -119,19 +136,32 @@ export const Post = () => {
         )
       ) : (
         <>
-          <Col xs={12} className="d-flex justify-content-between">
-            <h1>{post?.title}</h1>
-            <IconButton
-              aria-label={post?.likedByMe ? "Unlike" : "Like"}
-              isActive={post?.likedByMe}
-              disabled={togglePostLikeFn.loading}
-              Icon={post?.likedByMe ? FaHeart : FaRegHeart}
-              onClick={onTogglePostLike}
-              color="blue"
-            >
-              {post?.likeCount}
-            </IconButton>
-          </Col>
+          <Row>
+            <Col xs={12} className="d-flex justify-content-between">
+              <h1>{post?.title}</h1>
+              <IconButton
+                aria-label={post?.likedByMe ? "Unlike" : "Like"}
+                isActive={post?.likedByMe}
+                disabled={togglePostLikeFn.loading}
+                Icon={post?.likedByMe ? FaHeart : FaRegHeart}
+                onClick={onTogglePostLike}
+                color="blue"
+              >
+                {post?.likeCount}
+              </IconButton>
+            </Col>
+            <Col>
+              {post?.imageUrl && (
+                <img
+                  src={post?.imageUrl}
+                  alt="Post Image"
+                  style={{ maxWidth: "50%", height: "auto" }}
+                  className="my-3"
+                />
+              )}
+            </Col>
+          </Row>
+
           <p>{post?.body}</p>
         </>
       )}

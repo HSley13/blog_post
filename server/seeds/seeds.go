@@ -4,6 +4,7 @@ import (
 	"comment/models"
 	"gorm.io/gorm"
 	"log"
+	"os"
 )
 
 func Seed(db *gorm.DB) {
@@ -28,21 +29,37 @@ func Seed(db *gorm.DB) {
 		UserID: tony.ID,
 		Title:  "The Rise of Iron Man",
 		Body:   "Tony Stark, a genius inventor, builds the Iron Man suit to fight evil and protect the world. His journey from a selfish billionaire to a selfless hero is inspiring.",
+		Image:  os.Getenv("ironman_icon"),
+		Likes: []models.PostLike{
+			{UserID: steve.ID},
+			{UserID: bruce.ID}},
 	}
 	post2 := models.Post{
 		UserID: steve.ID,
 		Title:  "Captain America: The First Avenger",
 		Body:   "Steve Rogers, a frail young man, becomes Captain America after taking a super-soldier serum. He leads the fight against Hydra and becomes a symbol of hope.",
+		Image:  os.Getenv("captain_icon"),
+		Likes: []models.PostLike{
+			{UserID: tony.ID},
+			{UserID: bruce.ID}},
 	}
 	post3 := models.Post{
-		UserID: bruce.ID,
+		UserID: sley.ID,
 		Title:  "Batman: The Dark Knight",
 		Body:   "Bruce Wayne, traumatized by his parents' death, becomes Batman to fight crime in Gotham City. His no-kill rule and detective skills make him one of the greatest heroes.",
+		Image:  os.Getenv("batman_icon"),
+		Likes: []models.PostLike{
+			{UserID: tony.ID},
+			{UserID: steve.ID},
+			{UserID: bruce.ID}},
 	}
 	post4 := models.Post{
 		UserID: clark.ID,
 		Title:  "Superman: Man of Steel",
 		Body:   "Clark Kent, an alien from Krypton, uses his superpowers to protect Earth as Superman. His struggle to balance his human and Kryptonian heritage is central to his story.",
+		Image:  os.Getenv("superman_icon"),
+		Likes: []models.PostLike{
+			{UserID: bruce.ID}},
 	}
 
 	db.Create(&post1)

@@ -11,11 +11,17 @@ export const PostList = () => {
   const { loading, error, posts, createLocalPost } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
 
-  const onPostSubmit = async (title: string, body: string, userId: string) => {
+  const onPostSubmit = async (
+    title: string,
+    body: string,
+    userId: string,
+    image: File,
+  ) => {
     const post = await createPostFunc.execute({
       userId: userId,
       title: title,
       body: body,
+      file: image,
     });
     createLocalPost(post);
   };
