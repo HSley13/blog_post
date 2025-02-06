@@ -19,12 +19,14 @@ type createPostProps = {
   title: string;
   body: string;
   file?: File;
+  tags?: string[];
 };
 export const createPost = async ({
   userId,
   title,
   body,
   file,
+  tags,
 }: createPostProps) => {
   const formData = new FormData();
   formData.append("userId", userId);
@@ -34,6 +36,10 @@ export const createPost = async ({
     formData.append("image", file);
     console.log("CreatePost: ", file);
   }
+
+  tags?.forEach((tag) => {
+    formData.append("tags[]", tag);
+  });
 
   const response = await makeRequest({
     url: "/posts/",
@@ -50,12 +56,14 @@ type updatePostProps = {
   title: string;
   body: string;
   file?: File;
+  tags?: string[];
 };
 export const updatePost = async ({
   id,
   title,
   body,
   file,
+  tags,
 }: updatePostProps) => {
   const formData = new FormData();
   formData.append("title", title);
@@ -63,6 +71,10 @@ export const updatePost = async ({
   if (file) {
     formData.append("image", file);
   }
+
+  tags?.forEach((tag) => {
+    formData.append("tags[]", tag);
+  });
 
   const response = await makeRequest({
     url: `/posts/${id}`,

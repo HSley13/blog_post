@@ -16,6 +16,7 @@ type AllPostsContextValue = {
     body: string,
     updatedAt: string,
     imageUrl?: string,
+    tags?: string[],
   ) => void;
   deleteLocalPost: (id: string) => void;
   toggleLocalPostLike: (id: string, addLike: boolean) => void;
@@ -90,10 +91,13 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     body: string,
     updatedAt: string,
     imageUrl?: string,
+    tags?: string[],
   ) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === id ? { ...post, title, body, updatedAt, imageUrl } : post,
+        post.id === id
+          ? { ...post, title, body, updatedAt, imageUrl, tags }
+          : post,
       ),
     );
   };

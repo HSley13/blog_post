@@ -1,7 +1,7 @@
 import { Row, Col, Container } from "react-bootstrap";
 import { PostCard } from "./PostCard";
 import { dateFormatter } from "./Comment";
-import { Post } from "../types/types";
+import { Post, Tag } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { createPost } from "../services/posts";
 import { PostForm } from "./PostForm";
@@ -16,6 +16,7 @@ export const PostList = () => {
     body: string,
     userId: string,
     image: File,
+    tags?: string[],
   ) => {
     console.log("PostList: ", image);
     const newPost = await createPostFunc.execute({
@@ -23,6 +24,7 @@ export const PostList = () => {
       title: title,
       body: body,
       file: image,
+      tags: tags,
     });
     createLocalPost(newPost);
     console.log("PostList: imageUrl", newPost.imageUrl);
@@ -63,6 +65,7 @@ export const PostList = () => {
               title={post.title}
               likeCount={post.likeCount}
               likedByMe={post.likedByMe}
+              tags={post?.tags?.map((tag: Tag) => tag?.name)}
               updatedAt={dateFormatter.format(
                 Date.parse(post.updated_at || post.updatedAt),
               )}

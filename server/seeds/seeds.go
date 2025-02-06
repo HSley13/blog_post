@@ -9,119 +9,110 @@ import (
 func Seed(db *gorm.DB) {
 	db.Exec("DELETE FROM likes")
 	db.Exec("DELETE FROM comments")
+	db.Exec("DELETE FROM post_tags")
 	db.Exec("DELETE FROM posts")
+	db.Exec("DELETE FROM tags")
 	db.Exec("DELETE FROM users")
 
-	tony := models.User{Name: "Tony Stark (Iron Man)"}
-	steve := models.User{Name: "Steve Rogers (Captain America)"}
-	bruce := models.User{Name: "Bruce Wayne (Batman)"}
-	clark := models.User{Name: "Clark Kent (Superman)"}
-	sley := models.User{Name: "Sley"}
+	users := []models.User{
+		{Name: "Tony Stark (Iron Man)"},
+		{Name: "Steve Rogers (Captain America)"},
+		{Name: "Bruce Wayne (Batman)"},
+		{Name: "Clark Kent (Superman)"},
+		{Name: "Sley"},
+	}
+	db.Create(&users)
 
-	db.Create(&sley)
-	db.Create(&tony)
-	db.Create(&steve)
-	db.Create(&bruce)
-	db.Create(&clark)
+	posts := []models.Post{
+		{
+			UserID: users[0].ID,
+			Title:  "The Rise of Iron Man",
+			Body:   "A genius billionaire with a heart of steel, Tony Stark builds a suit of armor to protect the world, using his tech genius and unshakable will. With a sarcastic edge and a drive to improve, he’s the ultimate tech-powered superhero.",
+			Image:  os.Getenv("ironman_icon"),
+			Likes: []models.PostLike{
+				{UserID: users[1].ID},
+				{UserID: users[2].ID},
+			},
+		},
+		{
+			UserID: users[1].ID,
+			Title:  "Captain America: The First Avenger",
+			Body:   "A super soldier with unwavering moral integrity, Steve Rogers is the symbol of bravery and patriotism. Armed with his indestructible shield, he leads with honor, fighting for justice and equality in a world that needs hope.",
+			Image:  os.Getenv("captain_icon"),
+			Likes: []models.PostLike{
+				{UserID: users[0].ID},
+				{UserID: users[2].ID},
+			},
+		},
+		{
+			UserID: users[4].ID,
+			Title:  "Batman: The Dark Knight",
+			Body:   "The Dark Knight, Bruce Wayne, fights crime in Gotham City using his intellect, martial arts prowess, and advanced technology. Haunted by the death of his parents, he’s a brooding, relentless vigilante who believes in justice over vengeance.",
+			Image:  os.Getenv("batman_icon"),
+			Likes: []models.PostLike{
+				{UserID: users[0].ID},
+				{UserID: users[1].ID},
+			},
+		},
+		{
+			UserID: users[3].ID,
+			Title:  "Superman: Man of Steel",
+			Body:   " The Man of Steel, Clark Kent is an alien with superhuman powers, including flight, strength, and heat vision. Raised as a symbol of hope and justice, he’s the ultimate protector of Earth, embodying the ideals of truth, justice, and the American way.",
+			Image:  os.Getenv("superman_icon"),
+			Likes: []models.PostLike{
+				{UserID: users[0].ID},
+				{UserID: users[1].ID},
+			},
+		},
+	}
+	db.Create(&posts)
 
-	post1 := models.Post{
-		UserID: tony.ID,
-		Title:  "The Rise of Iron Man",
-		Body:   "Tony Stark, a genius inventor, builds the Iron Man suit to fight evil and protect the world. His journey from a selfish billionaire to a selfless hero is inspiring.",
-		Image:  os.Getenv("ironman_icon"),
-		Likes: []models.PostLike{
-			{UserID: steve.ID},
-			{UserID: bruce.ID}},
+	tags := []models.Tag{
+		{Name: "Marvel"},
+		{Name: "Superhero"},
+		{Name: "DC"},
 	}
-	post2 := models.Post{
-		UserID: steve.ID,
-		Title:  "Captain America: The First Avenger",
-		Body:   "Steve Rogers, a frail young man, becomes Captain America after taking a super-soldier serum. He leads the fight against Hydra and becomes a symbol of hope.",
-		Image:  os.Getenv("captain_icon"),
-		Likes: []models.PostLike{
-			{UserID: tony.ID},
-			{UserID: bruce.ID}},
-	}
-	post3 := models.Post{
-		UserID: sley.ID,
-		Title:  "Batman: The Dark Knight",
-		Body:   "Bruce Wayne, traumatized by his parents' death, becomes Batman to fight crime in Gotham City. His no-kill rule and detective skills make him one of the greatest heroes.",
-		Image:  os.Getenv("batman_icon"),
-		Likes: []models.PostLike{
-			{UserID: tony.ID},
-			{UserID: steve.ID},
-			{UserID: bruce.ID}},
-	}
-	post4 := models.Post{
-		UserID: clark.ID,
-		Title:  "Superman: Man of Steel",
-		Body:   "Clark Kent, an alien from Krypton, uses his superpowers to protect Earth as Superman. His struggle to balance his human and Kryptonian heritage is central to his story.",
-		Image:  os.Getenv("superman_icon"),
-		Likes: []models.PostLike{
-			{UserID: bruce.ID}},
-	}
+	db.Create(&tags)
 
-	db.Create(&post1)
-	db.Create(&post2)
-	db.Create(&post3)
-	db.Create(&post4)
+	postTags := []models.PostTag{
+		{PostID: posts[0].ID, TagID: tags[0].ID},
+		{PostID: posts[0].ID, TagID: tags[1].ID},
+		{PostID: posts[1].ID, TagID: tags[0].ID},
+		{PostID: posts[1].ID, TagID: tags[1].ID},
+		{PostID: posts[2].ID, TagID: tags[1].ID},
+		{PostID: posts[2].ID, TagID: tags[2].ID},
+		{PostID: posts[3].ID, TagID: tags[1].ID},
+		{PostID: posts[3].ID, TagID: tags[2].ID},
+	}
+	db.Create(&postTags)
 
-	comment1 := models.Comment{
-		Message: "Iron Man is my favorite hero! His tech is amazing.",
-		UserID:  tony.ID,
-		PostID:  post1.ID,
-	}
-	comment6 := models.Comment{
-		Message:  "Iron Man can single handle Batman",
-		UserID:   steve.ID,
-		PostID:   post1.ID,
-		ParentID: &comment1.ID,
-	}
-	comment7 := models.Comment{
-		Message: "Iron Man's armor is incredible!",
-		UserID:  clark.ID,
-		PostID:  post1.ID,
-	}
-	comment8 := models.Comment{
-		Message:  "Yeah I really like how He used it when fighting Thanos",
-		UserID:   clark.ID,
-		PostID:   post1.ID,
-		ParentID: &comment7.ID,
-	}
-	comment9 := models.Comment{
-		Message: "Batman Can solo handle Iron Man",
-		UserID:  sley.ID,
-		PostID:  post1.ID,
-	}
-	comment2 := models.Comment{
-		Message: "Captain America's shield is iconic!",
-		UserID:  steve.ID,
-		PostID:  post2.ID,
-	}
-	comment3 := models.Comment{
-		Message: "Batman's no-kill rule is what makes him a true hero.",
-		UserID:  bruce.ID,
-		PostID:  post3.ID,
-	}
-	comment4 := models.Comment{
-		Message: "Superman's strength and compassion are unmatched.",
-		UserID:  clark.ID,
-		PostID:  post4.ID,
-	}
-	comment5 := models.Comment{
-		Message:  "I love how Iron Man and Captain America work together in the Avengers!",
-		UserID:   tony.ID,
-		PostID:   post2.ID,
-		ParentID: &comment2.ID,
-	}
+	mainComments := []models.Comment{
+		{Message: "Iron Man is my favorite hero!", UserID: users[4].ID, PostID: posts[0].ID},
+		{Message: "Iron Man's tech is amazing!", UserID: users[1].ID, PostID: posts[0].ID},
 
-	db.Create(&comment1)
-	db.Create(&comment6)
-	db.Create(&comment7)
-	db.Create(&comment8)
-	db.Create(&comment9)
-	db.Create(&comment2)
-	db.Create(&comment3)
-	db.Create(&comment4)
-	db.Create(&comment5)
+		{Message: "Captain America's shield is iconic!", UserID: users[1].ID, PostID: posts[1].ID},
+		{Message: "His values are unmatched.", UserID: users[2].ID, PostID: posts[1].ID},
+
+		{Message: "Batman's dark knight is the best!", UserID: users[4].ID, PostID: posts[2].ID},
+		{Message: "The bat symbol is so iconic!", UserID: users[0].ID, PostID: posts[2].ID},
+
+		{Message: "Superman's strength is unmatched!", UserID: users[3].ID, PostID: posts[3].ID},
+		{Message: "He's faster than a speeding bullet!", UserID: users[0].ID, PostID: posts[3].ID},
+	}
+	db.Create(&mainComments)
+
+	nestedComments := []models.Comment{
+		{Message: "I agree, his suit is top-notch.", UserID: users[2].ID, PostID: posts[0].ID, ParentID: &mainComments[0].ID},
+		{Message: "He's a genius inventor!", UserID: users[4].ID, PostID: posts[0].ID, ParentID: &mainComments[0].ID},
+
+		{Message: "Best weapon ever!", UserID: users[0].ID, PostID: posts[1].ID, ParentID: &mainComments[2].ID},
+		{Message: "I love his dedication to justice.", UserID: users[3].ID, PostID: posts[1].ID, ParentID: &mainComments[2].ID},
+
+		{Message: "He is the best detective!", UserID: users[3].ID, PostID: posts[2].ID, ParentID: &mainComments[4].ID},
+		{Message: "Gotham needs him!", UserID: users[4].ID, PostID: posts[2].ID, ParentID: &mainComments[4].ID},
+
+		{Message: "Superman's heat vision is incredible.", UserID: users[1].ID, PostID: posts[3].ID, ParentID: &mainComments[6].ID},
+		{Message: "The Man of Steel never gives up.", UserID: users[2].ID, PostID: posts[3].ID, ParentID: &mainComments[6].ID},
+	}
+	db.Create(&nestedComments)
 }

@@ -20,7 +20,14 @@ export type Post = {
   updatedAt: string;
   updated_at: string;
   imageUrl?: string;
+  tags?: Tag[];
   comments: Comment[];
   likeCount: number;
   likedByMe: boolean;
+};
+
+export type Tag = {
+  id: string;
+  name: string;
+  Posts?: Post[];
 };

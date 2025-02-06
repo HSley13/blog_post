@@ -13,6 +13,7 @@ type PostCardProps = {
   likeCount: number;
   likedByMe: boolean;
   updatedAt: string;
+  tags?: string[];
 };
 export const PostCard = ({
   id,
@@ -20,6 +21,7 @@ export const PostCard = ({
   likeCount,
   likedByMe,
   updatedAt,
+  tags,
 }: PostCardProps) => {
   const { toggleLocalPostLike } = useAllPostsContext();
   const togglePostLikeFn = useAsyncFn(togglePostLike);
@@ -55,9 +57,16 @@ export const PostCard = ({
                 {likeCount}
               </IconButton>
             </Col>
-            <div className="ms-auto">
+            <Col className="d-flex justify-content-between align-items-center">
+              <Col className="d-flex flex-wrap mt-2">
+                {tags?.map((tag) => (
+                  <Badge className="me-1" bg="secondary" key={tag}>
+                    {tag}
+                  </Badge>
+                ))}
+              </Col>
               <small className="text-muted">{updatedAt}</small>
-            </div>
+            </Col>
           </Stack>
         </Stack>
       </Card.Body>

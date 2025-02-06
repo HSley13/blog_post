@@ -5,13 +5,14 @@ import { CommentList } from "./CommentList";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
 import { createComment } from "../services/comments";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col, Badge } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { PostForm } from "./PostForm";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { useState } from "react";
 import { updatePost, deletePost, togglePostLike } from "../services/posts";
+import { Tag } from "../types/types";
 
 export const Post = () => {
   const { createLocalComment, post, rootComments } = useSinglePostContext();
@@ -30,14 +31,15 @@ export const Post = () => {
   const onPostSubmit = async (
     title: string,
     body: string,
-    userId: string,
     image: File,
+    tags?: string[],
   ) => {
     const updatedPost = await updatePostFn.execute({
       id: post?.id.toString() || "",
       title: title,
       body: body,
       file: image,
+      tags: tags,
     });
     setIsEditing(false);
     updateLocalPost(
@@ -46,6 +48,7 @@ export const Post = () => {
       updatedPost.body,
       updatedPost.imageUrl || "",
       updatedPost.updatedAt,
+      updatedPost.tags,
     );
   };
 
@@ -120,7 +123,6 @@ export const Post = () => {
             </Col>
 
             <Col>
-              {" "}
               {post?.imageUrl && (
                 <img
                   src={post?.imageUrl}
@@ -139,6 +141,14 @@ export const Post = () => {
 
             <Col xs={12}>
               <p>{post?.body}</p>
+            </Col>
+
+            <Col xs={12} className="d-flex flex-wrap mb-3">
+              {post?.tags?.map((tag: Tag) => (
+                <Badge key={tag.id} bg="primary" className="mx-1">
+                  {tag.name}
+                </Badge>
+              ))}
             </Col>
           </Row>
         )
@@ -171,6 +181,13 @@ export const Post = () => {
           </Row>
 
           <p>{post?.body}</p>
+          <Col xs={12} className="d-flex flex-wrap mb-3">
+            {post?.tags?.map((tag: Tag) => (
+              <Badge key={tag.id} bg="primary" className="mx-1">
+                {tag.name}
+              </Badge>
+            ))}
+          </Col>
         </>
       )}
 

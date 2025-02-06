@@ -15,7 +15,7 @@ import (
 
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	var posts []models.Post
-	if err := db.Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
+	if err := db.Preload("Tags").Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve posts"})
 	}
 
@@ -48,6 +48,7 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 			"likeCount": likeCount,
 			"likedByMe": likedByMe,
 			"updatedAt": post.UpdatedAt,
+			"tags":      post.Tags,
 		})
 	}
 
@@ -66,6 +67,10 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 
 	if err := db.Preload("Likes").First(&post, "id = ?", postID).Error; err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
+	}
+
+	if err := db.Preload("Tags").First(&post, "id = ?", postID).Error; err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Posts not found"})
 	}
 
 	userID := ctx.Cookies("userId")
@@ -119,19 +124,23 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likedByMe": likedByMe,
 		"createdAt": post.CreatedAt,
 		"comments":  comments,
+		"tags":      post.Tags,
 	})
 }
 
 func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	var body struct {
-		UserId string `json:"userId"`
-		Title  string `json:"title"`
-		Body   string `json:"body"`
+		UserId string   `json:"userId"`
+		Title  string   `json:"title"`
+		Body   string   `json:"body"`
+		Tags   []string `json:"tags"`
 	}
 
 	if err := ctx.BodyParser(&body); err != nil || body.UserId == "" || body.Title == "" || body.Body == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title, body, and UserId are required"})
 	}
+
+	log.Println("The tags are: ", body.Tags)
 
 	var imageUrl string
 	var imageKey string
@@ -150,6 +159,18 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Image is required"})
 	}
 
+	var tags []models.Tag
+	for _, tagName := range body.Tags {
+		var tag models.Tag
+		if err := db.Where("name = ?", tagName).First(&tag).Error; err != nil {
+			if err := db.Create(&models.Tag{Name: tagName}).Error; err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to create tag"})
+			}
+		} else {
+			tags = append(tags, tag)
+		}
+	}
+
 	post := models.Post{
 		UserID:    body.UserId,
 		Title:     body.Title,
@@ -159,9 +180,8 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		ImageKey:  imageKey,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		Tags:      tags,
 	}
-
-	log.Println("imageKey is:", post.ImageKey)
 
 	if err := db.Create(&post).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add post"})
@@ -177,6 +197,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 		"imageUrl":  post.Image,
+		"tags":      post.Tags,
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(newPost)
@@ -185,13 +206,16 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	postID := ctx.Params("id")
 	var body struct {
-		Title string `json:"title"`
-		Body  string `json:"body"`
+		Title string   `json:"title"`
+		Body  string   `json:"body"`
+		Tags  []string `json:"tags"`
 	}
 
 	if err := ctx.BodyParser(&body); err != nil || body.Title == "" || body.Body == "" {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title and body are required"})
 	}
+
+	log.Println("The tags are: ", body.Tags)
 
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
@@ -227,8 +251,24 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		}
 	}
 
+	var tags []models.Tag
+	for _, tagName := range body.Tags {
+		var tag models.Tag
+		if err := db.Where("name = ?", tagName).First(&tag).Error; err != nil {
+			if err := db.Create(&models.Tag{Name: tagName}).Error; err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to create tag"})
+			}
+		} else {
+			tags = append(tags, tag)
+		}
+	}
+
 	if err := db.Save(&post).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update post"})
+	}
+
+	if err := db.Model(&post).Association("Tags").Replace(post.Tags); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update post tags"})
 	}
 
 	return ctx.JSON(fiber.Map{
@@ -238,6 +278,7 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 		"imageUrl":  post.Image,
+		"tags":      post.Tags,
 	})
 }
 

@@ -4,6 +4,19 @@ import (
 	"time"
 )
 
+type Tag struct {
+	ID    string `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()" json:"id"`
+	Name  string `gorm:"not null;size:255;unique" json:"name"`
+	Posts []Post `gorm:"many2many:post_tags;" json:"posts"`
+}
+
+type PostTag struct {
+	PostID string `gorm:"primaryKey;type:uuid" json:"post_id"`
+	TagID  string `gorm:"primaryKey;type:uuid" json:"tag_id"`
+	Post   Post   `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE;" json:"post"`
+	Tag    Tag    `gorm:"foreignKey:TagID;constraint:OnDelete:CASCADE;" json:"tag"`
+}
+
 type PostLike struct {
 	UserID string `gorm:"primaryKey;type:uuid" json:"user_id"`
 	PostID string `gorm:"primaryKey;type:uuid" json:"post_id"`
@@ -39,6 +52,7 @@ type Post struct {
 	ImageKey  string     `gorm:"type:text" json:"image_key"`
 	Comments  []Comment  `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
 	Likes     []PostLike `gorm:"constraint:OnDelete:CASCADE;" json:"likes"`
+	Tags      []Tag      `gorm:"many2many:post_tags;" json:"tags"`
 }
 
 type Comment struct {

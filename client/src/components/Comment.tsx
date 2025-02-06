@@ -1,7 +1,7 @@
 import { IconButton } from "./IconButton";
 import { FaReply, FaHeart, FaRegHeart, FaEdit, FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Button } from "react-bootstrap";
+import { Button, Card } from "react-bootstrap";
 import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { CommentList } from "./CommentList";
 import { useState } from "react";
@@ -96,8 +96,8 @@ export const Comment = ({
 
   return (
     <>
-      <div className="card mb-2">
-        <div className="card-body">
+      <Card className="mb-2">
+        <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <span className="fw-bold">{user.name}</span>
             <span className="text-muted">
@@ -164,12 +164,12 @@ export const Comment = ({
               {deleteCommentFunc.error?.message}
             </div>
           )}
-        </div>
-      </div>
+        </Card.Body>
+      </Card>
 
       {isReplying && (
-        <div className="card mb-2">
-          <div className="card-body">
+        <Card className="mb-2">
+          <Card.Body>
             <CommentForm
               autoFocus={true}
               loading={createCommentFunc.loading}
@@ -177,33 +177,31 @@ export const Comment = ({
               onSubmit={onCommentReply}
               initialValue={`@${user.name}`}
             />
-          </div>
-        </div>
+          </Card.Body>
+        </Card>
       )}
 
       {childComments != null && childComments?.length > 0 && (
-        <>
-          <div className="position-relative mb-2">
-            <div
-              className="position-absolute start-0 top-0 bottom-0"
-              style={{ width: "2px", backgroundColor: "#ccc" }}
-            />
+        <div className="position-relative mb-2">
+          <div
+            className="position-absolute start-0 top-0 bottom-0"
+            style={{ width: "2px", backgroundColor: "#ccc" }}
+          />
 
-            <Button
-              variant="primary"
-              className="rounded-pill mb-2 ms-2"
-              onClick={() => setAreChildrenHidden(!areChildrenHidden)}
-            >
-              {areChildrenHidden ? "Show Replies" : "Hide Replies"}
-            </Button>
+          <Button
+            variant="primary"
+            className="rounded-pill mb-2 ms-2"
+            onClick={() => setAreChildrenHidden(!areChildrenHidden)}
+          >
+            {areChildrenHidden ? "Show Replies" : "Hide Replies"}
+          </Button>
 
-            {!areChildrenHidden && (
-              <div className="ms-4">
-                <CommentList comments={childComments} />
-              </div>
-            )}
-          </div>
-        </>
+          {!areChildrenHidden && (
+            <div className="ms-4">
+              <CommentList comments={childComments} />
+            </div>
+          )}
+        </div>
       )}
     </>
   );
