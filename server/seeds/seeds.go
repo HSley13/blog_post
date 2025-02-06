@@ -3,7 +3,6 @@ package seeds
 import (
 	"comment/models"
 	"gorm.io/gorm"
-	"log"
 	"os"
 )
 
@@ -84,7 +83,7 @@ func Seed(db *gorm.DB) {
 		PostID:  post1.ID,
 	}
 	comment8 := models.Comment{
-		Message:  "Yeah I really like how He used it when fighting against Thanos",
+		Message:  "Yeah I really like how He used it when fighting Thanos",
 		UserID:   clark.ID,
 		PostID:   post1.ID,
 		ParentID: &comment7.ID,
@@ -125,6 +124,4 @@ func Seed(db *gorm.DB) {
 	db.Create(&comment3)
 	db.Create(&comment4)
 	db.Create(&comment5)
-
-	log.Println("Database seeded successfully!")
 }

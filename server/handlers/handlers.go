@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -15,14 +16,14 @@ import (
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	var posts []models.Post
 	if err := db.Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve posts"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve posts"})
 	}
 
 	userID := ctx.Cookies("userId")
 	var userPostLikes []models.PostLike
 	if userID != "" {
 		if err := db.Where("user_id = ?", userID).Find(&userPostLikes).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user post likes"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve user post likes"})
 		}
 	}
 
@@ -30,7 +31,7 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	for _, post := range posts {
 		var likeCount int64
 		if err := db.Model(&models.PostLike{}).Where("post_id = ?", post.ID).Count(&likeCount).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to count post likes"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to count post likes"})
 		}
 
 		likedByMe := false
@@ -57,26 +58,22 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 	postID := ctx.Params("id")
 	var post models.Post
 
-	// Fetch the post with its comments, including nested relationships
 	if err := db.Preload("Comments", func(db *gorm.DB) *gorm.DB {
 		return db.Order("created_at DESC").Preload("User").Preload("Likes")
 	}).First(&post, "id = ?", postID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
 	}
 
-	// Fetch the post with its likes
 	if err := db.Preload("Likes").First(&post, "id = ?", postID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
 	}
 
-	// Get the current user's likes
 	userID := ctx.Cookies("userId")
 	var userCommentLikes []models.CommentLike
 	if err := db.Where("user_id = ?", userID).Find(&userCommentLikes).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user comment likes"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve user comment likes"})
 	}
 
-	// Map comments with like information
 	var comments []fiber.Map
 	for _, comment := range post.Comments {
 		likedByMe := false
@@ -102,7 +99,7 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 
 	var userPostLikes []models.PostLike
 	if err := db.Where("user_id = ?", userID).Find(&userPostLikes).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user post likes"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve user post likes"})
 	}
 	likedByMe := false
 	for _, like := range userPostLikes {
@@ -130,28 +127,28 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		UserId string `json:"userId"`
 		Title  string `json:"title"`
 		Body   string `json:"body"`
-		Image  string `json:"image"`
-	}
-
-	if body.Image == "" {
-		log.Println("Image is empty")
 	}
 
 	if err := ctx.BodyParser(&body); err != nil || body.UserId == "" || body.Title == "" || body.Body == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title, body and Image are required"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title, body, and UserId are required"})
 	}
 
-	imageUrl := ""
-	var err error = nil
-	if body.Image != "" {
-		imageKey := time.Now().Format("2006-01-02-15-04-05")
-		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, body.Image)
+	var imageUrl string
+	var imageKey string
+	if file, err := ctx.FormFile("image"); err == nil {
+		imageKey = uuid.New().String() + file.Filename
+
+		fileContent, err := file.Open()
 		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to upload image"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
 		}
+		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image to S3"})
+		}
+	} else {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Image is required"})
 	}
-
-	log.Println("Image URL:", imageUrl)
 
 	post := models.Post{
 		UserID:    body.UserId,
@@ -159,15 +156,18 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		Body:      body.Body,
 		Likes:     []models.PostLike{},
 		Image:     imageUrl,
+		ImageKey:  imageKey,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
+	log.Println("imageKey is:", post.ImageKey)
+
 	if err := db.Create(&post).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add post"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add post"})
 	}
 
-	newPost := (fiber.Map{
+	newPost := fiber.Map{
 		"id":        post.ID,
 		"userId":    post.UserID,
 		"title":     post.Title,
@@ -177,11 +177,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 		"imageUrl":  post.Image,
-	})
-
-	// BroadcastMessage(map[string]interface{}{
-	// 	"type": "NEW_POST",
-	// 	"data": newPost,
+	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(newPost)
 }
@@ -191,38 +187,48 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	var body struct {
 		Title string `json:"title"`
 		Body  string `json:"body"`
-		Image string `json:"image"`
 	}
+
 	if err := ctx.BodyParser(&body); err != nil || body.Title == "" || body.Body == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Title and body are required"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title and body are required"})
 	}
 
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
 	}
 
 	post.Title = body.Title
 	post.Body = body.Body
 	post.UpdatedAt = time.Now()
 
-	if body.Image != "" {
-		imageKey := time.Now().Format("2006-01-02-15-04-05")
-		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, body.Image)
-		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to upload image"})
-		}
+	if file, err := ctx.FormFile("image"); err == nil {
+		if file != nil {
+			imageKey := uuid.New().String() + file.Filename
 
-		if imageUrl != "" {
+			fileContent, err := file.Open()
+			if err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
+			}
+
+			err = db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey)
+			if err != nil {
+				log.Println("Error deleting image from S3:", err)
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
+			}
+
+			imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
+			if err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image"})
+			}
+
 			post.Image = imageUrl
-		} else {
-			post.Image = ""
-			//TODO: delete image from AWS
+			post.ImageKey = imageKey
 		}
 	}
 
 	if err := db.Save(&post).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update post"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update post"})
 	}
 
 	return ctx.JSON(fiber.Map{
@@ -239,13 +245,16 @@ func HandleDeletePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 	postID := ctx.Params("id")
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Post not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
 	}
 
-	//TODO: delete image from AWS
+	err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
+	}
 
 	if err := db.Delete(&post).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete post"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete post"})
 	}
 
 	return ctx.JSON(fiber.Map{
@@ -257,13 +266,13 @@ func HandleToggleLikePost(ctx *fiber.Ctx, db *gorm.DB) error {
 	postID := ctx.Params("postId")
 	userID := ctx.Cookies("userId")
 	if userID == "" {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not authenticated"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
 	}
 
 	var like models.PostLike
 	if err := db.Where("user_id = ? AND post_id = ?", userID, postID).First(&like).Error; err == nil {
 		if err := db.Delete(&like).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to remove like"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to remove like"})
 		}
 		return ctx.JSON(fiber.Map{
 			"id":      postID,
@@ -272,7 +281,7 @@ func HandleToggleLikePost(ctx *fiber.Ctx, db *gorm.DB) error {
 	} else {
 		newLike := models.PostLike{UserID: userID, PostID: postID}
 		if err := db.Create(&newLike).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add like"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add like"})
 		}
 		return ctx.JSON(fiber.Map{
 			"id":      postID,
@@ -287,12 +296,12 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		ParentID *string `json:"parentId"`
 	}
 	if err := ctx.BodyParser(&body); err != nil || body.Message == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Message is required"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Message is required"})
 	}
 
 	userID := ctx.Cookies("userId")
 	if userID == "" {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not authenticated"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
 	}
 
 	postID := ctx.Params("id")
@@ -306,11 +315,11 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 	}
 
 	if err := db.Create(&comment).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add comment"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add comment"})
 	}
 
 	if err := db.Preload("User").First(&comment, "id = ?", comment.ID).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve comment details"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve comment details"})
 	}
 
 	newComment := fiber.Map(fiber.Map{
@@ -326,11 +335,6 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likedByMe": false,
 	})
 
-	// BroadcastMessage(map[string]interface{}{
-	// 	"type": "NEW_COMMENT",
-	// 	"data": newComment,
-	// })
-
 	return ctx.Status(fiber.StatusCreated).JSON(newComment)
 }
 
@@ -340,23 +344,23 @@ func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB) error {
 		Message string `json:"message"`
 	}
 	if err := ctx.BodyParser(&body); err != nil || body.Message == "" {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Message is required"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Message is required"})
 	}
 
 	var comment models.Comment
 	if err := db.First(&comment, "id = ?", commentID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Comment not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Comment not found"})
 	}
 
 	userID := ctx.Cookies("userId")
 	if comment.UserID != userID {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "You do not have permission to edit this comment"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "You do not have permission to edit this comment"})
 	}
 
 	comment.Message = body.Message
 	comment.UpdatedAt = time.Now()
 	if err := db.Save(&comment).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update comment"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update comment"})
 	}
 
 	return ctx.JSON(fiber.Map{
@@ -370,16 +374,16 @@ func HandleDeleteComment(ctx *fiber.Ctx, db *gorm.DB) error {
 	commentID := ctx.Params("commentId")
 	var comment models.Comment
 	if err := db.First(&comment, "id = ?", commentID).Error; err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Comment not found"})
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Comment not found"})
 	}
 
 	userID := ctx.Cookies("userId")
 	if comment.UserID != userID {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "You do not have permission to delete this comment"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "You do not have permission to delete this comment"})
 	}
 
 	if err := db.Delete(&comment).Error; err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete comment"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete comment"})
 	}
 
 	return ctx.JSON(fiber.Map{"message": "Comment deleted"})
@@ -389,13 +393,13 @@ func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB) error {
 	commentID := ctx.Params("commentId")
 	userID := ctx.Cookies("userId")
 	if userID == "" {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not authenticated"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
 	}
 
 	var like models.CommentLike
 	if err := db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like).Error; err == nil {
 		if err := db.Delete(&like).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to remove like"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to remove like"})
 		}
 		return ctx.JSON(fiber.Map{
 			"id":      commentID,
@@ -404,7 +408,7 @@ func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB) error {
 	} else {
 		newLike := models.CommentLike{UserID: userID, CommentID: commentID}
 		if err := db.Create(&newLike).Error; err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to add like"})
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add like"})
 		}
 		return ctx.JSON(fiber.Map{
 			"id":      commentID,

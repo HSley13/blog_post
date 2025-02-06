@@ -1,7 +1,6 @@
 package db_aws
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -10,14 +9,17 @@ import (
 	"io"
 	"log"
 	"math/big"
+	"mime/multipart"
 	"os"
 	"strings"
 	"time"
 
 	"comment/models"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
 	// "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/driver/postgres"
@@ -116,7 +118,7 @@ func GetDataFromS3(ctx context.Context, s3Client *s3.Client, key string) (string
 	return string(body), nil
 }
 
-func StoreDataToS3(ctx context.Context, s3Client *s3.Client, key string, data string) (string, error) {
+func StoreDataToS3(ctx context.Context, s3Client *s3.Client, key string, file multipart.File) (string, error) {
 	bucket := os.Getenv("BUCKET_NAME")
 	if bucket == "" {
 		return "", fmt.Errorf("BUCKET_NAME environment variable is not set")
@@ -125,7 +127,7 @@ func StoreDataToS3(ctx context.Context, s3Client *s3.Client, key string, data st
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
-		Body:   bytes.NewReader([]byte(data)),
+		Body:   file,
 	}
 
 	_, err := s3Client.PutObject(ctx, input)
@@ -138,6 +140,7 @@ func StoreDataToS3(ctx context.Context, s3Client *s3.Client, key string, data st
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	}
+
 	psURL, err := psClient.PresignGetObject(ctx, psInput, func(po *s3.PresignOptions) {
 		po.Expires = 7 * 24 * time.Hour
 	})
@@ -148,10 +151,10 @@ func StoreDataToS3(ctx context.Context, s3Client *s3.Client, key string, data st
 	return psURL.URL, nil
 }
 
-func DeleteDataFromS3(ctx context.Context, s3Client *s3.Client, key string) (bool, error) {
+func DeleteDataFromS3(ctx context.Context, s3Client *s3.Client, key string) error {
 	bucket := os.Getenv("BUCKET_NAME")
 	if bucket == "" {
-		return false, fmt.Errorf("BUCKET_NAME environment variable is not set")
+		return fmt.Errorf("BUCKET_NAME environment variable is not set")
 	}
 
 	input := &s3.DeleteObjectInput{
@@ -161,11 +164,10 @@ func DeleteDataFromS3(ctx context.Context, s3Client *s3.Client, key string) (boo
 
 	_, err := s3Client.DeleteObject(ctx, input)
 	if err != nil {
-		return false, fmt.Errorf("Failed to delete object: %v", err)
+		return fmt.Errorf("Failed to delete object: %v", err)
 	}
 
-	log.Printf("Successfully deleted object: %s/%s\n", bucket, key)
-	return true, nil
+	return nil
 }
 
 func InitDb() *gorm.DB {

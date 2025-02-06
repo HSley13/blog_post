@@ -22,7 +22,7 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-1"))
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-east-1"))
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}

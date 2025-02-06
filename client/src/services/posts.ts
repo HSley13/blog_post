@@ -32,7 +32,9 @@ export const createPost = async ({
   formData.append("body", body);
   if (file) {
     formData.append("image", file);
+    console.log("CreatePost: ", file);
   }
+
   const response = await makeRequest({
     url: "/posts/",
     options: {

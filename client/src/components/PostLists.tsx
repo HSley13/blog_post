@@ -17,13 +17,15 @@ export const PostList = () => {
     userId: string,
     image: File,
   ) => {
-    const post = await createPostFunc.execute({
+    console.log("PostList: ", image);
+    const newPost = await createPostFunc.execute({
       userId: userId,
       title: title,
       body: body,
       file: image,
     });
-    createLocalPost(post);
+    createLocalPost(newPost);
+    console.log("PostList: imageUrl", newPost.imageUrl);
   };
 
   if (loading) {
@@ -37,7 +39,7 @@ export const PostList = () => {
   if (error) {
     return (
       <Container className="text-center my-5">
-        <h1 className="error-msg">{error?.message}</h1>
+        <h1 className="error-msg">{createPostFunc.error?.message}</h1>
       </Container>
     );
   }

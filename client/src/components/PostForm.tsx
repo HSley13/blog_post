@@ -4,7 +4,12 @@ import { Form, Button, Row, Col } from "react-bootstrap";
 import { useState } from "react";
 
 type PostFormProps = {
-  onSubmit: (title: string, body: string, userId: string, image: File) => void;
+  onSubmit: (
+    title: string,
+    body: string,
+    userId: string,
+    image: File,
+  ) => Promise<void>;
   loading: boolean;
   error: Error | undefined;
   title?: string;
@@ -27,6 +32,9 @@ export const PostForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (image) {
+      console.log("PostForm: image is defined");
+    }
     onSubmit(
       titleRef.current!.value,
       bodyRef.current!.value,

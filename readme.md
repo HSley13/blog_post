@@ -1,6 +1,6 @@
 # WebApp - Post, Comment, and Media Platform
 
-This is a web application built with **TypeScript** (for the frontend) and **Golang** (for the backend). Users can create posts, add media (text, photos, or videos), edit posts, manage comments (add, edit, delete), like comments, and organize content with tags. The application also includes user authentication using cookies for session management.
+This is a web application I built using **TypeScript** for the frontend and **Golang** for the backend. The platform allows users to create posts, add media (text, photos, or videos), edit and manage comments, like content, and organize posts using tags. The app also features user authentication with session management handled by cookies.
 
 ---
 
@@ -8,27 +8,29 @@ This is a web application built with **TypeScript** (for the frontend) and **Gol
 
 ### User Authentication
 
-- **Login/Logout**: Users can securely log in and log out of the platform using a username and password.
-- **Session Management**: Uses cookies for authentication and user session tracking.
+- **Login/Logout**: Users can securely log in and log out using their username and password.
+- **Session Management**: Authentication is managed through cookies, ensuring that user sessions are tracked securely.
 
 ### Posts
 
-- **Create Post**: Users can create a post with text, images, or videos.
-- **Edit Post**: Users can update their posts.
-- **Delete Post**: Users can delete posts they created.
-- **Tags**: Posts can be tagged with relevant keywords for categorization.
-- **Media Support**: You can upload photos or videos along with text in a post. The media is stored on AWS.
+- **Create Post**: Users can create posts with text, images, or videos.
+- **Edit Post**: Only the creator of a post can edit it.
+- **Delete Post**: Only the creator of a post can delete it.
+- **Like Post**: Users can like posts.
+- **Tags**: Posts can be tagged with relevant keywords for easier categorization.
+- **Media Support**: Photos and videos can be uploaded alongside text when creating a post. These media files are securely stored on AWS S3.
 
 ### Comments
 
-- **Add Comments**: Users can leave comments on posts.
-- **Edit/Delete Comments**: Users can edit or delete their own comments.
-- **Comment Replies**: Comments support nested replies to create threaded discussions.
+- **Add Comments**: Users can comment on posts.
+- **Edit/Delete Comments**: Users can only edit or delete their own comments.
+- **Comment Replies**: Comments support nested replies, allowing for threaded discussions.
 - **Like Comments**: Users can like comments they find helpful or interesting.
+- **Comment Permissions**: Only the creator of a comment can edit or delete it. Others can only reply or like the comment.
 
 ### File Storage
 
-- **AWS Integration**: All uploaded media (photos, videos) are stored securely on AWS S3.
+- **AWS Integration**: Media files (images, videos) uploaded along with posts or comments are securely stored in AWS S3.
 
 ---
 
@@ -36,18 +38,18 @@ This is a web application built with **TypeScript** (for the frontend) and **Gol
 
 ### Frontend
 
-- **TypeScript**: Static typing for better development experience and reliability.
-- **React.js** (or similar framework/library of your choice) for building the user interface.
-- **Axios** or **Fetch API** for making HTTP requests to the backend.
-- **CSS/SCSS** or **TailwindCSS** for styling.
+- **TypeScript**: Provides static typing to improve development reliability experience and scalability.
+- **React.ts**: Used for building the user interface.
+- **Axios**: Used for making HTTP requests to the backend.
+- **CSS/SCSS** and **TailwindCSS**: Used for styling the application.
 
 ### Backend
 
-- **Golang**: Fast, efficient backend logic for managing posts, comments, and user authentication.
-- **GORM**: ORM for handling interactions with the PostgreSQL database.
-- **PostgreSQL**: Relational database for storing user data, posts, comments, and tags.
-- **AWS S3**: Cloud storage for media files like images and videos.
-- **JWT/Cookies**: For secure user authentication and session management.
+- **Golang**: Efficiently handles backend logic, including managing posts, comments, and user authentication.
+- **GORM**: ORM used for interacting with the PostgreSQL database.
+- **PostgreSQL**: The relational database stores user data, posts, comments, and tags.
+- **AWS S3**: Used for cloud storage of media files (images, videos).
+- **JWT/Cookies**: Secure user authentication and session management.
 
 ---
 

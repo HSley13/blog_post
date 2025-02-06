@@ -27,10 +27,12 @@ export const Post = () => {
   const deletePostFn = useAsyncFn(deletePost);
   const togglePostLikeFn = useAsyncFn(togglePostLike);
 
-  const onPostSubmit = async (title: string, body: string, image: File) => {
-    if (!image) {
-      console.log("image is undefined");
-    }
+  const onPostSubmit = async (
+    title: string,
+    body: string,
+    userId: string,
+    image: File,
+  ) => {
     const updatedPost = await updatePostFn.execute({
       id: post?.id.toString() || "",
       title: title,
@@ -45,7 +47,6 @@ export const Post = () => {
       updatedPost.imageUrl || "",
       updatedPost.updatedAt,
     );
-    console.log("imageUrl", updatedPost.imageUrl);
   };
 
   const onDeletePost = async () => {
@@ -119,11 +120,18 @@ export const Post = () => {
             </Col>
 
             <Col>
+              {" "}
               {post?.imageUrl && (
                 <img
                   src={post?.imageUrl}
                   alt="Post Image"
-                  style={{ maxWidth: "100%", height: "auto" }}
+                  style={{
+                    width: "300px",
+                    height: "300px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    margin: "10px auto",
+                  }}
                   className="my-3"
                 />
               )}
