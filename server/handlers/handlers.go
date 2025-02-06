@@ -13,9 +13,17 @@ import (
 	"time"
 )
 
+func HandleGetTags(ctx *fiber.Ctx, db *gorm.DB) error {
+	var tags []models.Tag
+	if err := db.Find(&tags).Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve tags"})
+	}
+	return ctx.JSON(tags)
+}
+
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	var posts []models.Post
-	if err := db.Preload("Tags").Select("id", "title", "updated_at").Find(&posts).Error; err != nil {
+	if err := db.Preload("Tags").Select("id", "title", "created_at", "updated_at").Find(&posts).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve posts"})
 	}
 
@@ -47,6 +55,7 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 			"title":     post.Title,
 			"likeCount": likeCount,
 			"likedByMe": likedByMe,
+			"createdAt": post.CreatedAt,
 			"updatedAt": post.UpdatedAt,
 			"tags":      post.Tags,
 		})
@@ -123,6 +132,7 @@ func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
 		"likeCount": len(post.Likes),
 		"likedByMe": likedByMe,
 		"createdAt": post.CreatedAt,
+		"updatedAt": post.UpdatedAt,
 		"comments":  comments,
 		"tags":      post.Tags,
 	})
@@ -140,35 +150,40 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title, body, and UserId are required"})
 	}
 
-	log.Println("The tags are: ", body.Tags)
-
-	var imageUrl string
-	var imageKey string
-	if file, err := ctx.FormFile("image"); err == nil {
-		imageKey = uuid.New().String() + file.Filename
-
-		fileContent, err := file.Open()
-		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
-		}
-		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
-		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image to S3"})
-		}
-	} else {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Image is required"})
-	}
+	tx := db.Begin()
 
 	var tags []models.Tag
 	for _, tagName := range body.Tags {
 		var tag models.Tag
-		if err := db.Where("name = ?", tagName).First(&tag).Error; err != nil {
-			if err := db.Create(&models.Tag{Name: tagName}).Error; err != nil {
+		if err := tx.Where("name = ?", tagName).First(&tag).Error; err != nil {
+			if err := tx.Create(&models.Tag{Name: tagName}).Error; err != nil {
+				tx.Rollback()
 				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to create tag"})
 			}
-		} else {
-			tags = append(tags, tag)
+			tx.Where("name = ?", tagName).First(&tag)
 		}
+		tags = append(tags, tag)
+	}
+
+	var imageUrl string
+	var imageKey string
+	if file, err := ctx.FormFile("image"); err == nil && file != nil {
+		imageKey = uuid.New().String() + file.Filename
+
+		fileContent, err := file.Open()
+		if err != nil {
+			tx.Rollback()
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
+		}
+
+		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
+		if err != nil {
+			tx.Rollback()
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image to S3"})
+		}
+	} else {
+		tx.Rollback()
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Image is required"})
 	}
 
 	post := models.Post{
@@ -183,8 +198,13 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		Tags:      tags,
 	}
 
-	if err := db.Create(&post).Error; err != nil {
+	if err := tx.Create(&post).Error; err != nil {
+		tx.Rollback()
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to add post"})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to commit transaction"})
 	}
 
 	newPost := fiber.Map{
@@ -215,67 +235,73 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Title and body are required"})
 	}
 
-	log.Println("The tags are: ", body.Tags)
-
 	var post models.Post
 	if err := db.First(&post, "id = ?", postID).Error; err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
 	}
 
+	tx := db.Begin()
+
 	post.Title = body.Title
 	post.Body = body.Body
 	post.UpdatedAt = time.Now()
 
-	if file, err := ctx.FormFile("image"); err == nil {
-		if file != nil {
-			imageKey := uuid.New().String() + file.Filename
+	if file, err := ctx.FormFile("image"); err == nil && file != nil {
+		imageKey := uuid.New().String() + file.Filename
 
-			fileContent, err := file.Open()
-			if err != nil {
-				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
-			}
-
-			err = db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey)
-			if err != nil {
-				log.Println("Error deleting image from S3:", err)
-				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
-			}
-
-			imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
-			if err != nil {
-				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image"})
-			}
-
-			post.Image = imageUrl
-			post.ImageKey = imageKey
+		fileContent, err := file.Open()
+		if err != nil {
+			tx.Rollback()
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
 		}
+
+		if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey); err != nil {
+			tx.Rollback()
+			log.Println("Error deleting image from S3:", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
+		}
+
+		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
+		if err != nil {
+			tx.Rollback()
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image"})
+		}
+
+		post.Image = imageUrl
+		post.ImageKey = imageKey
 	}
 
 	var tags []models.Tag
 	for _, tagName := range body.Tags {
 		var tag models.Tag
-		if err := db.Where("name = ?", tagName).First(&tag).Error; err != nil {
-			if err := db.Create(&models.Tag{Name: tagName}).Error; err != nil {
+		if err := tx.Where("name = ?", tagName).First(&tag).Error; err != nil {
+			if err := tx.Create(&models.Tag{Name: tagName}).Error; err != nil {
+				tx.Rollback()
 				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to create tag"})
 			}
-		} else {
-			tags = append(tags, tag)
+			tx.Where("name = ?", tagName).First(&tag)
 		}
+		tags = append(tags, tag)
 	}
 
-	if err := db.Save(&post).Error; err != nil {
+	if err := tx.Save(&post).Error; err != nil {
+		tx.Rollback()
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update post"})
 	}
 
-	if err := db.Model(&post).Association("Tags").Replace(post.Tags); err != nil {
+	if err := tx.Model(&post).Association("Tags").Replace(tags); err != nil {
+		tx.Rollback()
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to update post tags"})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Transaction failed"})
 	}
 
 	return ctx.JSON(fiber.Map{
 		"id":        post.ID,
 		"title":     post.Title,
 		"body":      post.Body,
-		"createdAt": post.CreatedAt,
 		"updatedAt": post.UpdatedAt,
 		"imageUrl":  post.Image,
 		"tags":      post.Tags,

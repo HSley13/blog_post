@@ -53,6 +53,9 @@ func main() {
 	// 	return handlers.HandleWebSocket(ctx)
 	// })
 	// app.Get("/ws", websocket.New(handlers.WebSocketHandler))
+	app.Get("/tags", func(ctx *fiber.Ctx) error {
+		return handlers.HandleGetTags(ctx, db)
+	})
 	app.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
 	})

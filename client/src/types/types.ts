@@ -17,6 +17,7 @@ export type Post = {
   body: string;
   userId: string;
   createdAt: string;
+  created_at: string;
   updatedAt: string;
   updated_at: string;
   imageUrl?: string;

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Card, Badge, Col, Stack } from "react-bootstrap";
+import { Card, Badge, Col, Stack, Row } from "react-bootstrap";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import styles from "../modules/PostCard.module.css";
 import { IconButton } from "./IconButton";
@@ -12,14 +12,17 @@ type PostCardProps = {
   title: string;
   likeCount: number;
   likedByMe: boolean;
+  createdAt: string;
   updatedAt: string;
   tags?: string[];
 };
+
 export const PostCard = ({
   id,
   title,
   likeCount,
   likedByMe,
+  createdAt,
   updatedAt,
   tags,
 }: PostCardProps) => {
@@ -58,14 +61,25 @@ export const PostCard = ({
               </IconButton>
             </Col>
             <Col className="d-flex justify-content-between align-items-center">
-              <Col className="d-flex flex-wrap mt-2">
+              <Col className="d-flex mt-2">
                 {tags?.map((tag) => (
                   <Badge className="me-1" bg="secondary" key={tag}>
                     {tag}
                   </Badge>
                 ))}
               </Col>
-              <small className="text-muted">{updatedAt}</small>
+              {updatedAt === createdAt ? (
+                <small className="text-muted">{updatedAt}</small>
+              ) : (
+                <Row className="text-end">
+                  <small className="text-muted ms-1 fs-8">
+                    created: {createdAt}
+                  </small>
+                  <small className="text-muted ms-1 fs-8">
+                    last updated: {updatedAt}
+                  </small>
+                </Row>
+              )}
             </Col>
           </Stack>
         </Stack>

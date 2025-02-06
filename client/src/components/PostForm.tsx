@@ -1,7 +1,10 @@
 import { useUser } from "../hooks/useUser";
 import React from "react";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import { Form, Button, Row, Col, Stack } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import { useState } from "react";
+import CreatableReactSelect from "react-select/creatable";
+import { useNavigate } from "react-router-dom";
 
 type PostFormProps = {
   onSubmit: (
@@ -9,13 +12,17 @@ type PostFormProps = {
     body: string,
     userId: string,
     image: File,
+    returnTags?: string[],
   ) => Promise<void>;
   loading: boolean;
   error: Error | undefined;
-  title?: string;
-  body?: string;
+  title: string;
+  body: string;
   imgUrl?: string;
+  availableTags?: string[];
+  initialTags?: string[];
 };
+
 export const PostForm = ({
   onSubmit,
   loading,
@@ -23,28 +30,34 @@ export const PostForm = ({
   title,
   body,
   imgUrl,
+  availableTags,
+  initialTags,
 }: PostFormProps) => {
   const titleRef = React.useRef<HTMLInputElement>(null);
   const bodyRef = React.useRef<HTMLTextAreaElement>(null);
   const currentUser = useUser();
+  const navigate = useNavigate();
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(imgUrl);
+  const [tagsValue, setTagsValue] = useState<
+    { label: string; value: string }[]
+  >(initialTags?.map((tag: string) => ({ label: tag, value: tag })) || []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (image) {
-      console.log("PostForm: image is defined");
-    }
     onSubmit(
       titleRef.current!.value,
       bodyRef.current!.value,
       currentUser?.id || "",
       image || new File([], ""),
+      tagsValue.map((tag) => tag.value),
     );
     titleRef.current!.value = "";
     bodyRef.current!.value = "";
     setImage(null);
     setImagePreview(null);
+    setTagsValue([]);
+    navigate("/");
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +72,7 @@ export const PostForm = ({
     <Form onSubmit={handleSubmit}>
       <Row className="mb-3 align-items-center">
         <Col>
+          <Form.Label>Title</Form.Label>
           <Form.Control
             type="text"
             ref={titleRef}
@@ -69,38 +83,69 @@ export const PostForm = ({
         </Col>
         <Col>
           <Form.Group>
-            <Form.Control
-              type="file"
-              onChange={handleImageChange}
-              disabled={loading}
+            <Form.Label>Tags</Form.Label>
+            <CreatableReactSelect
+              onCreateOption={(label) => {
+                const newTag = { label, value: label };
+                setTagsValue((prev) => [...prev, newTag]);
+              }}
+              value={tagsValue}
+              options={availableTags?.map((tag) => ({
+                label: tag,
+                value: tag,
+              }))}
+              onChange={(selectedOptions) => {
+                if (selectedOptions) {
+                  setTagsValue(
+                    selectedOptions as { label: string; value: string }[],
+                  );
+                } else {
+                  setTagsValue([]);
+                }
+              }}
+              isMulti
             />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="mt-2"
-                style={{ maxHeight: "200px", maxWidth: "100%" }}
-              />
-            )}
           </Form.Group>
         </Col>
       </Row>
+      <Col className="mb-3">
+        <Form.Group>
+          <Form.Control
+            type="file"
+            onChange={handleImageChange}
+            disabled={loading}
+          />
+          {imagePreview && (
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="mt-2"
+              style={{ maxHeight: "200px", maxWidth: "100%" }}
+            />
+          )}
+        </Form.Group>
+      </Col>
       <Col className="mb-3">
         <Form.Control
           as="textarea"
           defaultValue={body || ""}
           ref={bodyRef}
-          rows={3}
+          rows={10}
           placeholder="Add body"
           disabled={loading}
         />
         {error && <p className="text-danger">{error.message}</p>}
       </Col>
-      <Col className="text-end">
-        <Button type="submit" variant="primary" disabled={loading}>
-          Submit
+      <Stack direction="horizontal" gap={2} className="justify-content-end">
+        <Button type="submit" variant="primary">
+          Save
         </Button>
-      </Col>
+        <Link to="..">
+          <Button type="button" variant="outline-secondary">
+            Cancel
+          </Button>
+        </Link>
+      </Stack>
     </Form>
   );
 };

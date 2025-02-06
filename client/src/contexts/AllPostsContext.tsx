@@ -1,12 +1,13 @@
 import React, { createContext, useEffect, useState, useContext } from "react";
 import { useAsync } from "../hooks/useAsync";
 // import { useWebSocket } from "../hooks/useWebsocket";
-import { getPosts } from "../services/posts";
+import { getPosts, getTags } from "../services/posts";
 import { Container } from "react-bootstrap";
-import { Post } from "../types/types";
+import { Post, Tag } from "../types/types";
 
 type AllPostsContextValue = {
   posts: Post[] | undefined;
+  tags: Tag[] | undefined;
   loading: boolean;
   error: Error | undefined;
   createLocalPost: (post: Post) => void;
@@ -24,6 +25,7 @@ type AllPostsContextValue = {
 
 const Context = createContext<AllPostsContextValue>({
   posts: undefined,
+  tags: undefined,
   loading: false,
   error: undefined,
   createLocalPost: () => {},
@@ -42,7 +44,15 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
   children,
 }) => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const { loading, error, value: allPosts } = useAsync(getPosts);
+  const { value: allTags } = useAsync(getTags);
+
+  useEffect(() => {
+    if (allTags) {
+      setTags(allTags);
+    }
+  }, [allTags]);
 
   useEffect(() => {
     if (allPosts) {
@@ -93,8 +103,8 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     imageUrl?: string,
     tags?: string[],
   ) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
+    setPosts((prevPosts: Post[]) =>
+      prevPosts.map((post: Post) =>
         post.id === id
           ? { ...post, title, body, updatedAt, imageUrl, tags }
           : post,
@@ -124,6 +134,7 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     <Context.Provider
       value={{
         posts,
+        tags,
         loading,
         error,
         createLocalPost,

@@ -8,49 +8,25 @@ import { createComment } from "../services/comments";
 import { Container, Row, Col, Badge } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
-import { PostForm } from "./PostForm";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
-import { useState } from "react";
-import { updatePost, deletePost, togglePostLike } from "../services/posts";
+import { deletePost, togglePostLike } from "../services/posts";
 import { Tag } from "../types/types";
+import { dateFormatter } from "./Comment";
 
 export const Post = () => {
   const { createLocalComment, post, rootComments } = useSinglePostContext();
-  const { updateLocalPost, deleteLocalPost, toggleLocalPostLike } =
-    useAllPostsContext();
-  const [isEditing, setIsEditing] = useState(false);
+  const { deleteLocalPost, toggleLocalPostLike } = useAllPostsContext();
   const currentUser = useUser();
   const navigate = useNavigate();
 
+  const handleEditClick = () => {
+    navigate(`/posts/${post?.id}/edit`);
+  };
+
   const createCommentFunc = useAsyncFn(createComment);
 
-  const updatePostFn = useAsyncFn(updatePost);
   const deletePostFn = useAsyncFn(deletePost);
   const togglePostLikeFn = useAsyncFn(togglePostLike);
-
-  const onPostSubmit = async (
-    title: string,
-    body: string,
-    image: File,
-    tags?: string[],
-  ) => {
-    const updatedPost = await updatePostFn.execute({
-      id: post?.id.toString() || "",
-      title: title,
-      body: body,
-      file: image,
-      tags: tags,
-    });
-    setIsEditing(false);
-    updateLocalPost(
-      updatedPost.id,
-      updatedPost.title,
-      updatedPost.body,
-      updatedPost.imageUrl || "",
-      updatedPost.updatedAt,
-      updatedPost.tags,
-    );
-  };
 
   const onDeletePost = async () => {
     await deletePostFn.execute({
@@ -78,80 +54,77 @@ export const Post = () => {
   return (
     <Container className="my-2">
       {post?.userId === currentUser?.id ? (
-        isEditing ? (
-          <Row>
-            <Col xs={12}>
-              <PostForm
-                title={post?.title}
-                body={post?.body}
-                imgUrl={post?.imageUrl}
-                onSubmit={onPostSubmit}
-                loading={updatePostFn.loading}
-                error={updatePostFn.error}
+        <Row>
+          <Col xs={12} className="d-flex justify-content-between">
+            <h1>{post?.title}</h1>
+            <Col xs="auto">
+              <IconButton
+                aria-label={post?.likedByMe ? "Unlike" : "Like"}
+                isActive={post?.likedByMe}
+                disabled={togglePostLikeFn.loading}
+                Icon={post?.likedByMe ? FaHeart : FaRegHeart}
+                onClick={onTogglePostLike}
+                color="blue"
+              >
+                {post?.likeCount}
+              </IconButton>
+              <IconButton
+                Icon={FaEdit}
+                color="blue"
+                onClick={handleEditClick}
               />
+              <IconButton Icon={FaTrash} color="red" onClick={onDeletePost} />
             </Col>
-          </Row>
-        ) : (
-          <Row>
-            <Col xs={12} className="d-flex justify-content-between">
-              <h1>{post?.title}</h1>
-              <Col xs="auto">
-                <IconButton
-                  aria-label={post?.likedByMe ? "Unlike" : "Like"}
-                  isActive={post?.likedByMe}
-                  disabled={togglePostLikeFn.loading}
-                  Icon={post?.likedByMe ? FaHeart : FaRegHeart}
-                  onClick={onTogglePostLike}
-                  color="blue"
-                >
-                  {post?.likeCount}
-                </IconButton>
-                <IconButton
-                  aria-label={isEditing ? "Cancel Edit" : "Edit"}
-                  Icon={FaEdit}
-                  color="blue"
-                  onClick={() => setIsEditing(true)}
-                />
-                {!isEditing && (
-                  <IconButton
-                    Icon={FaTrash}
-                    color="red"
-                    onClick={onDeletePost}
-                  />
-                )}
-              </Col>
-            </Col>
+          </Col>
 
-            <Col>
-              {post?.imageUrl && (
-                <img
-                  src={post?.imageUrl}
-                  alt="Post Image"
-                  style={{
-                    width: "300px",
-                    height: "300px",
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    margin: "10px auto",
-                  }}
-                  className="my-3"
-                />
-              )}
-            </Col>
+          <Col>
+            {post?.imageUrl && (
+              <img
+                src={post?.imageUrl}
+                alt="Post Image"
+                style={{
+                  width: "300px",
+                  height: "300px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  margin: "10px auto",
+                }}
+                className="my-3"
+              />
+            )}
+          </Col>
 
-            <Col xs={12}>
-              <p>{post?.body}</p>
-            </Col>
+          <Col xs={12}>
+            <p>{post?.body}</p>
+          </Col>
 
-            <Col xs={12} className="d-flex flex-wrap mb-3">
-              {post?.tags?.map((tag: Tag) => (
-                <Badge key={tag.id} bg="primary" className="mx-1">
-                  {tag.name}
-                </Badge>
-              ))}
-            </Col>
-          </Row>
-        )
+          <Col xs={12} className="d-flex flex-wrap mb-3">
+            {post?.tags?.map((tag: Tag) => (
+              <Badge key={tag.id} bg="primary" className="mx-1">
+                {tag.name}
+              </Badge>
+            ))}
+          </Col>
+
+          {dateFormatter.format(Date.parse(post?.updatedAt)) ===
+          dateFormatter.format(Date.parse(post?.createdAt)) ? (
+            <Row className="text-end">
+              <small className="text-muted">
+                {dateFormatter.format(Date.parse(post?.createdAt))}
+              </small>
+            </Row>
+          ) : (
+            <Row className="text-end">
+              <small className="text-muted ms-1 fs-8">
+                created: {dateFormatter.format(Date.parse(post?.createdAt))}
+              </small>
+              <small className="text-muted ms-1 fs-8">
+                last updated:
+                {dateFormatter.format(Date.parse(post?.updatedAt))}
+              </small>
+            </Row>
+          )}
+        </Row>
       ) : (
         <>
           <Row>
@@ -188,6 +161,25 @@ export const Post = () => {
               </Badge>
             ))}
           </Col>
+
+          {dateFormatter.format(Date.parse(post?.updatedAt)) ===
+          dateFormatter.format(Date.parse(post?.createdAt)) ? (
+            <Row className="text-end">
+              <small className="text-muted">
+                {dateFormatter.format(Date.parse(post?.createdAt))}
+              </small>
+            </Row>
+          ) : (
+            <Row className="text-end">
+              <small className="text-muted ms-1 fs-8">
+                created: {dateFormatter.format(Date.parse(post?.createdAt))}
+              </small>
+              <small className="text-muted ms-1 fs-8">
+                last updated:
+                {dateFormatter.format(Date.parse(post?.updatedAt))}
+              </small>
+            </Row>
+          )}
         </>
       )}
 

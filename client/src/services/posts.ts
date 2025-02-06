@@ -1,5 +1,12 @@
 import { makeRequest } from "./makeRequest";
 
+export const getTags = async () => {
+  const response = await makeRequest({
+    url: "/tags",
+  });
+  return response;
+};
+
 export const getPosts = async () => {
   const response = await makeRequest({
     url: "/posts",
