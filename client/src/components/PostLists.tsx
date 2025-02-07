@@ -5,12 +5,31 @@ import { Post, Tag } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { createPost } from "../services/posts";
 import { useAsyncFn } from "../hooks/useAsync";
-import { Button } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import ReactSelect from "react-select";
 
 export const PostList = () => {
-  const { loading, error, posts } = useAllPostsContext();
+  const { loading, error, posts, tags } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [title, setTitle] = useState<string>("");
+
+  const filteredPosts = useMemo(() => {
+    return posts?.filter((post: Post) => {
+      const matchesTitle =
+        title === "" || post.title.toLowerCase().includes(title.toLowerCase());
+      const matchesTags =
+        !selectedTags.length ||
+        (post.tags &&
+          selectedTags.every((tag) =>
+            post?.tags?.some((postTag) => postTag.name === tag),
+          ));
+
+      return matchesTitle && matchesTags;
+    });
+  }, [posts, title, selectedTags]);
 
   if (loading) {
     return (
@@ -35,9 +54,46 @@ export const PostList = () => {
           <Button variant="primary">Create Post</Button>
         </Link>
       </Col>
+      <Row className="mb-4">
+        <Col>
+          <Form.Group>
+            <Form.Label>Search by title</Form.Label>
+            <Form.Control
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Search by title"
+              className="form-control"
+            />
+          </Form.Group>
+        </Col>
+        <Col xs="auto">
+          <Form.Group>
+            <Form.Label>Search by tags</Form.Label>
+            <ReactSelect
+              isMulti
+              options={tags?.map((tag) => ({
+                value: tag?.name,
+                label: tag?.name,
+              }))}
+              value={selectedTags.map((tag) => ({
+                value: tag,
+                label: tag,
+              }))}
+              onChange={(selectedOptions) => {
+                setSelectedTags(
+                  selectedOptions
+                    ? selectedOptions.map((option) => option.value)
+                    : [],
+                );
+              }}
+            />
+          </Form.Group>
+        </Col>
+      </Row>
       <h1 className="text-center mb-4">Most Recent Posts</h1>
-      <Row xs={1} md={2} xl={3} className="g-3">
-        {posts?.map((post: Post) => (
+      <Row xs={1} md={2} xl={2} className="g-3">
+        {filteredPosts?.map((post: Post) => (
           <Col key={post.id}>
             <PostCard
               id={post.id.toString()}

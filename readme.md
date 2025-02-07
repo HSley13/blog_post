@@ -58,5 +58,4 @@ This is a web application I built using **TypeScript** for the frontend and **Go
 ![homePage](previews/1.png)
 ![Post Form --> Owner can edit post ](previews/2.png)
 ![Post Form --> Non-owner cannot edit post](previews/3.png)
-![Comments](previews/4.png)
-![Edit Form](previews/5.png)
+![Edit Form](previews/4.png)

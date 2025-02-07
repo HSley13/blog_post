@@ -57,7 +57,7 @@ export const PostForm = ({
     setImage(null);
     setImagePreview(null);
     setTagsValue([]);
-    navigate("/");
+    navigate(-1);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,11 +140,13 @@ export const PostForm = ({
         <Button type="submit" variant="primary">
           Save
         </Button>
-        <Link to="..">
-          <Button type="button" variant="outline-secondary">
-            Cancel
-          </Button>
-        </Link>
+        <Button
+          type="button"
+          variant="outline-secondary"
+          onClick={() => navigate(-1)}
+        >
+          Cancel
+        </Button>
       </Stack>
     </Form>
   );
