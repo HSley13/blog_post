@@ -33,7 +33,10 @@ type CommentLike struct {
 
 type User struct {
 	ID           string        `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()" json:"id"`
-	Name         string        `gorm:"not null;size:100" json:"name"`
+	FirstName    string        `gorm:"not null;size:100" json:"first_name"`
+	LastName     string        `gorm:"not null;size:100" json:"last_name"`
+	Email        string        `gorm:"not null;size:100;unique" json:"email"`
+	HashPassword string        `gorm:"not null;size:100" json:"hash_password"`
 	Comments     []Comment     `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
 	Posts        []Post        `gorm:"constraint:OnDelete:CASCADE;" json:"posts"`
 	PostLikes    []PostLike    `gorm:"constraint:OnDelete:CASCADE;" json:"post_likes"`

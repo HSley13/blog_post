@@ -1,6 +1,7 @@
 package db_aws
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -8,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/big"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -34,20 +34,12 @@ const (
 	keyLength   = 32
 )
 
-const validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#&?!~^-$%*+"
-
 func GenerateRandomSalt(length int) (string, error) {
 	salt := make([]byte, length)
-
-	for i := 0; i < length; i++ {
-		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(validChars))))
-		if err != nil {
-			return "", err
-		}
-		salt[i] = validChars[index.Int64()]
+	if _, err := rand.Read(salt); err != nil {
+		return "", fmt.Errorf("failed to generate random salt: %v", err)
 	}
-
-	return string(salt), nil
+	return base64.RawStdEncoding.EncodeToString(salt), nil
 }
 
 func HashPassword(password string) (string, error) {
@@ -64,25 +56,29 @@ func HashPassword(password string) (string, error) {
 	return fmt.Sprintf("%s$%s", saltEncoded, hashEncoded), nil
 }
 
-func VerifyPassword(password string, hashedPassword string) (bool, error) {
+func VerifyPassword(password string, hashedPassword string) error {
 	parts := strings.Split(hashedPassword, "$")
 	if len(parts) != 2 {
-		return false, errors.New("Invalid hashed password format")
+		return errors.New("invalid hashed password format")
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[0])
 	if err != nil {
-		return false, err
+		return errors.New("failed to decode salt")
 	}
 
 	storedHash, err := base64.RawStdEncoding.DecodeString(parts[1])
 	if err != nil {
-		return false, err
+		return errors.New("failed to decode stored hash")
 	}
 
 	computedHash := argon2.IDKey([]byte(password), salt, iterations, memory, uint8(parallelism), keyLength)
 
-	return string(computedHash) == string(storedHash), nil
+	if !bytes.Equal(computedHash, storedHash) {
+		return errors.New("invalid password")
+	}
+
+	return nil
 }
 
 func NewS3Client(ctx context.Context) (*s3.Client, error) {
@@ -192,7 +188,7 @@ func InitDb() *gorm.DB {
 func GetOrCreateUser(db *gorm.DB, username string) models.User {
 	var user models.User
 	if err := db.Where("name = ?", username).First(&user).Error; err != nil {
-		user = models.User{Name: username}
+		user = models.User{FirstName: username}
 		if createErr := db.Create(&user).Error; createErr != nil {
 			log.Fatalf("Failed to create user: %v", createErr)
 		}

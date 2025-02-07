@@ -55,7 +55,26 @@ This is a web application I built using **TypeScript** for the frontend and **Go
 
 ## Previews
 
-![homePage](previews/1.png)
+### signIn
+
+![signIn](previews/0-1.png)
+
+### signUp
+
+![signUp](previews/0-2.png)
+
+### PostList
+
+![postList](previews/1.png)
+
+### Post --> User(Owner) can edit/delete his post/comment
+
 ![Post Form --> Owner can edit post ](previews/2.png)
+
+### Post --> User(Non-owner) can't edit/delete others' post/comment
+
 ![Post Form --> Non-owner cannot edit post](previews/3.png)
+
+### Post Edit Form
+
 ![Edit Form](previews/4.png)

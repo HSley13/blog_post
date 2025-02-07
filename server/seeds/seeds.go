@@ -15,11 +15,11 @@ func Seed(db *gorm.DB) {
 	db.Exec("DELETE FROM users")
 
 	users := []models.User{
-		{Name: "Tony Stark (Iron Man)"},
-		{Name: "Steve Rogers (Captain America)"},
-		{Name: "Bruce Wayne (Batman)"},
-		{Name: "Clark Kent (Superman)"},
-		{Name: "Sley"},
+		{FirstName: "Tony", LastName: "STARK", Email: "tonystark@gmail.com", HashPassword: os.Getenv("HASH")},
+		{FirstName: "Steve", LastName: "ROGERS", Email: "steverogers@gmail.com", HashPassword: os.Getenv("HASH")},
+		{FirstName: "Bruce", LastName: "WAYNE", Email: "brucewayne@gmail.com", HashPassword: os.Getenv("HASH")},
+		{FirstName: "Clark", LastName: "KENT", Email: "clarkkent@gmail.com", HashPassword: os.Getenv("HASH")},
+		{FirstName: "Sley", LastName: "HORTES", Email: "sleyhortes@gmail.com", HashPassword: os.Getenv("HASH")},
 	}
 	db.Create(&users)
 

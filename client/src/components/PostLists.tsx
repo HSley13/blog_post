@@ -48,7 +48,7 @@ export const PostList = () => {
   }
 
   return (
-    <Container className="my-5">
+    <Container className="my-4">
       <Col className="mb-4 d-flex justify-content-end">
         <Link to="/posts/new">
           <Button variant="primary">Create Post</Button>
@@ -62,8 +62,7 @@ export const PostList = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Search by title"
-              className="form-control"
+              placeholder="Title..."
             />
           </Form.Group>
         </Col>

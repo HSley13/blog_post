@@ -1,7 +1,6 @@
 import { useUser } from "../hooks/useUser";
 import React from "react";
 import { Form, Button, Row, Col, Stack } from "react-bootstrap";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import CreatableReactSelect from "react-select/creatable";
 import { useNavigate } from "react-router-dom";
@@ -69,7 +68,7 @@ export const PostForm = ({
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit} className="my-4">
       <Row className="mb-3 align-items-center">
         <Col>
           <Form.Label>Title</Form.Label>

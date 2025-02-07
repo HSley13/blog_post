@@ -44,12 +44,11 @@ export const Post = () => {
   };
 
   return (
-    <Container className="my-2">
+    <Container className="my-4">
       {post?.userId === currentUser?.id ? (
         <PostDetails
           post={post}
           onTogglePostLike={onTogglePostLike}
-          toggleLocalPostLike={{ loading: togglePostLikeFn.loading }}
           onEdit={handleEditClick}
           onDelete={onDeletePost}
         />

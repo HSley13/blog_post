@@ -9,9 +9,6 @@ type PostDetailsProps = {
   onTogglePostLike: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  toggleLocalPostLike: {
-    loading: boolean;
-  };
 };
 
 export const PostDetails = ({
@@ -32,7 +29,6 @@ export const PostDetails = ({
           <IconButton
             aria-label={post?.likedByMe ? "Unlike" : "Like"}
             isActive={post?.likedByMe}
-            disabled={toggleLocalPostLike.loading}
             Icon={post?.likedByMe ? FaHeart : FaRegHeart}
             onClick={onTogglePostLike}
             color="blue"

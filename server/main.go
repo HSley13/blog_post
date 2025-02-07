@@ -14,7 +14,6 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"time"
 )
 
 func main() {
@@ -40,19 +39,16 @@ func main() {
 		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
 		AllowCredentials: true,
 	}))
-	app.Use(func(ctx *fiber.Ctx) error {
-		user := db_aws.GetOrCreateUser(db, "Sley")
-		ctx.Cookie(&fiber.Cookie{
-			Name:    "userId",
-			Value:   user.ID,
-			Expires: time.Now().Add(24 * time.Hour),
-		})
-		return ctx.Next()
-	})
 	// app.Use("/ws", func(ctx *fiber.Ctx) error {
 	// 	return handlers.HandleWebSocket(ctx)
 	// })
 	// app.Get("/ws", websocket.New(handlers.WebSocketHandler))
+	app.Post("/auth/signIn", func(ctx *fiber.Ctx) error {
+		return handlers.HandleSignIn(ctx, db)
+	})
+	app.Post("/auth/signUp", func(ctx *fiber.Ctx) error {
+		return handlers.HandleSignUp(ctx, db)
+	})
 	app.Get("/tags", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetTags(ctx, db)
 	})

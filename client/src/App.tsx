@@ -10,6 +10,8 @@ import { useAsyncFn } from "./hooks/useAsync";
 import { Container } from "react-bootstrap";
 import { Tag } from "./types/types";
 import { EditPost } from "./components/EditPost";
+import { AuthForm } from "./components/AuthForm";
+import { AllPostsProvider } from "./contexts/AllPostsContext";
 
 export const App = () => {
   const { tags, createLocalPost } = useAllPostsContext();
@@ -33,36 +35,50 @@ export const App = () => {
   };
 
   return (
-    <Container className="my-4">
+    <Container>
       <Routes>
-        <Route path="/" element={<PostList />} />
+        <Route path="/" element={<AuthForm />} />
+        <Route
+          path="/posts"
+          element={
+            <AllPostsProvider>
+              <PostList />
+            </AllPostsProvider>
+          }
+        />
         <Route
           path="/posts/:id"
           element={
-            <SinglePostProvider>
-              <Post />
-            </SinglePostProvider>
+            <AllPostsProvider>
+              <SinglePostProvider>
+                <Post />
+              </SinglePostProvider>
+            </AllPostsProvider>
           }
         />
         <Route
           path="posts/new"
           element={
             <div className="m-3">
+              <AllPostsProvider>
               <PostForm
                 availableTags={tags?.map((tag: Tag) => tag?.name)}
                 onSubmit={onPostSubmit}
                 loading={createPostFunc.loading}
                 error={createPostFunc.error}
               />
+              </AllPostsProvider>
             </div>
           }
         />
         <Route
           path="/posts/:id/edit"
           element={
-            <SinglePostProvider>
-              <EditPost />
-            </SinglePostProvider>
+            <AllPostsProvider>
+              <SinglePostProvider>
+                <EditPost />
+              </SinglePostProvider>
+            </AllPostsProvider>
           }
         />
         <Route path="*" element={<Navigate to="/" />} />
@@ -70,3 +86,4 @@ export const App = () => {
     </Container>
   );
 };
+
