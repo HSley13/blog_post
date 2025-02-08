@@ -1,15 +1,21 @@
 import { Post, Tag } from "../types/types";
-import { Row, Col } from "react-bootstrap";
+import { Row, Col, Container } from "react-bootstrap";
 import { PostCard } from "./PostCard";
 import { dateFormatter } from "./Comment";
+import { useAllPostsContext } from "../contexts/AllPostsContext";
+import { useMemo } from "react";
+import { useParams } from "react-router-dom";
 
-type MyPostListProps = {
-  myPosts: Post[] | undefined;
-};
-export const MyPostLists = ({ myPosts }: MyPostListProps) => {
-  console.log(myPosts);
+export const Profile = () => {
+  const { id } = useParams<{ id: string }>();
+  const { posts } = useAllPostsContext();
+
+  const myPosts = useMemo(() => {
+    return posts?.filter((post: Post) => post.userId === id);
+  }, [posts, id]);
+
   return (
-    <div>
+    <Container className="my-4">
       <h1>My Posts</h1>
       <Row xs={1} md={2} xl={2} className="g-3">
         {myPosts?.map((post: Post) => (
@@ -30,6 +36,6 @@ export const MyPostLists = ({ myPosts }: MyPostListProps) => {
           </Col>
         ))}
       </Row>
-    </div>
+    </Container>
   );
 };

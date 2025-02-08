@@ -9,12 +9,15 @@ import { Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import ReactSelect from "react-select";
+import { FaUser } from "react-icons/fa";
+import { useUser } from "../hooks/useUser";
 
 export const PostList = () => {
   const { loading, error, posts, tags } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [title, setTitle] = useState<string>("");
+  const currentUser = useUser();
 
   const filteredPosts = useMemo(() => {
     return posts?.filter((post: Post) => {
@@ -49,13 +52,14 @@ export const PostList = () => {
 
   return (
     <Container className="my-4">
-      <Col className="mb-4 d-flex justify-content-end">
+      <Col className="mb-4 gap-2 d-flex justify-content-end">
         <Link to="/posts/new">
-          <Button variant="primary">Create Post</Button>
+          <Button variant="primary">New Post</Button>
         </Link>
-        <Link to="/posts/myposts">
-          <Button variant="primary" className="ms-2">
-            My Posts
+        <Link to={`/profile/${currentUser?.id}`}>
+          <Button variant="primary" className="d-flex align-items-center">
+            <FaUser style={{ marginRight: "8px" }} />
+            Profile
           </Button>
         </Link>
       </Col>

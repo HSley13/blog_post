@@ -11,13 +11,11 @@ import { Container } from "react-bootstrap";
 import { Tag } from "./types/types";
 import { EditPost } from "./components/EditPost";
 import { AuthForm } from "./components/AuthForm";
-import { AllPostsProvider } from "./contexts/AllPostsContext";
-import { MyPostLists } from "./components/MyPostLists";
+import { Profile } from "./components/Profile";
 
 export const App = () => {
-  const { tags, myPosts, createLocalPost } = useAllPostsContext();
+  const { tags, createLocalPost } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
-  console.log("App: ", myPosts);
 
   const onPostSubmit = async (
     title: string,
@@ -40,51 +38,35 @@ export const App = () => {
     <Container>
       <Routes>
         <Route path="/" element={<AuthForm />} />
-        <Route
-          path="/posts/myposts"
-          element={<MyPostLists myPosts={myPosts} />}
-        />
-        <Route
-          path="/posts"
-          element={
-            <AllPostsProvider>
-              <PostList />
-            </AllPostsProvider>
-          }
-        />
+        <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/posts" element={<PostList />} />
         <Route
           path="/posts/:id"
           element={
-            <AllPostsProvider>
-              <SinglePostProvider>
-                <Post />
-              </SinglePostProvider>
-            </AllPostsProvider>
+            <SinglePostProvider>
+              <Post />
+            </SinglePostProvider>
           }
         />
         <Route
           path="posts/new"
           element={
             <div className="m-3">
-              <AllPostsProvider>
-                <PostForm
-                  availableTags={tags?.map((tag: Tag) => tag?.name)}
-                  onSubmit={onPostSubmit}
-                  loading={createPostFunc.loading}
-                  error={createPostFunc.error}
-                />
-              </AllPostsProvider>
+              <PostForm
+                availableTags={tags?.map((tag: Tag) => tag?.name)}
+                onSubmit={onPostSubmit}
+                loading={createPostFunc.loading}
+                error={createPostFunc.error}
+              />
             </div>
           }
         />
         <Route
           path="/posts/:id/edit"
           element={
-            <AllPostsProvider>
-              <SinglePostProvider>
-                <EditPost />
-              </SinglePostProvider>
-            </AllPostsProvider>
+            <SinglePostProvider>
+              <EditPost />
+            </SinglePostProvider>
           }
         />
         <Route path="*" element={<Navigate to="/" />} />

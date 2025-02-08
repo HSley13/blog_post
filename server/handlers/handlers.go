@@ -116,7 +116,7 @@ func HandleGetTags(ctx *fiber.Ctx, db *gorm.DB) error {
 
 func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 	posts := []models.Post{}
-	if err := db.Preload("Tags").Select("id", "title", "created_at", "updated_at").Order("updated_at DESC").Find(&posts).Error; err != nil {
+	if err := db.Preload("Tags").Select("id", "title", "user_id", "created_at", "updated_at").Order("updated_at DESC").Find(&posts).Error; err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve posts"})
 	}
 
@@ -150,6 +150,7 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 			"likedByMe": likedByMe,
 			"createdAt": post.CreatedAt,
 			"updatedAt": post.UpdatedAt,
+			"userId":    post.UserID,
 			"tags":      post.Tags,
 		})
 	}

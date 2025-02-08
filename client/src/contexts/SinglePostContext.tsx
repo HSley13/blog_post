@@ -10,7 +10,7 @@ import { useAsync } from "../hooks/useAsync";
 import { getPost } from "../services/posts";
 import { Container } from "react-bootstrap";
 import { Comment, Post } from "../types/types";
-import { useWebSocket } from "../hooks/useWebsocket";
+// import { useWebSocket } from "../hooks/useWebsocket";
 
 type SinglePostContextValue = {
   post: Post | undefined;

@@ -7,6 +7,7 @@ import { CommentList } from "./CommentList";
 import { useState } from "react";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
+import { Link } from "react-router-dom";
 import {
   createComment,
   updateComment,
@@ -99,7 +100,9 @@ export const Comment = ({
       <Card className="mb-2">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="fw-bold">{user.name}</span>
+            <Link to={`/profile/${user?.id}`} className="text-decoration-none">
+              <span className="fw-bold">{user.name}</span>
+            </Link>
             <span className="text-muted">
               {dateFormatter.format(Date.parse(createdAt))}
             </span>
