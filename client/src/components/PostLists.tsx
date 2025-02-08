@@ -53,6 +53,11 @@ export const PostList = () => {
         <Link to="/posts/new">
           <Button variant="primary">Create Post</Button>
         </Link>
+        <Link to="/posts/myposts">
+          <Button variant="primary" className="ms-2">
+            My Posts
+          </Button>
+        </Link>
       </Col>
       <Row className="mb-4">
         <Col>

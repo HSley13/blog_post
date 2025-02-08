@@ -1,13 +1,21 @@
-import React, { createContext, useEffect, useState, useContext } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useState,
+  useMemo,
+  useContext,
+} from "react";
 import { useAsync } from "../hooks/useAsync";
 // import { useWebSocket } from "../hooks/useWebsocket";
 import { getPosts, getTags } from "../services/posts";
 import { Container } from "react-bootstrap";
 import { Post, Tag } from "../types/types";
+import { useUser } from "../hooks/useUser";
 
 type AllPostsContextValue = {
   posts: Post[] | undefined;
   tags: Tag[] | undefined;
+  myPosts: Post[] | undefined;
   loading: boolean;
   error: Error | undefined;
   createLocalPost: (post: Post) => void;
@@ -26,6 +34,7 @@ type AllPostsContextValue = {
 const Context = createContext<AllPostsContextValue>({
   posts: undefined,
   tags: undefined,
+  myPosts: undefined,
   loading: false,
   error: undefined,
   createLocalPost: () => {},
@@ -45,20 +54,30 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
 }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const currentUser = useMemo(() => useUser(), []);
   const { loading, error, value: allPosts } = useAsync(getPosts);
+  const [myPosts, setMyPosts] = useState<Post[]>([]);
   const { value: allTags } = useAsync(getTags);
 
   useEffect(() => {
     if (allTags) {
       setTags(allTags);
     }
-  }, [allTags]);
+  }, [allTags, tags]);
 
   useEffect(() => {
     if (allPosts) {
       setPosts(allPosts);
     }
   }, [allPosts]);
+
+  useEffect(() => {
+    if (currentUser && allPosts) {
+      setMyPosts(
+        allPosts.filter((post: Post) => post.userId === currentUser.id),
+      );
+    }
+  }, [allPosts, currentUser]);
 
   // const wsUrl = import.meta.env.VITE_SOCKET_URL;
   // const { posts: wsPosts, comments: wsComments } = useWebSocket({
@@ -135,6 +154,7 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
       value={{
         posts,
         tags,
+        myPosts,
         loading,
         error,
         createLocalPost,

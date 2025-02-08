@@ -12,10 +12,12 @@ import { Tag } from "./types/types";
 import { EditPost } from "./components/EditPost";
 import { AuthForm } from "./components/AuthForm";
 import { AllPostsProvider } from "./contexts/AllPostsContext";
+import { MyPostLists } from "./components/MyPostLists";
 
 export const App = () => {
-  const { tags, createLocalPost } = useAllPostsContext();
+  const { tags, myPosts, createLocalPost } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
+  console.log("App: ", myPosts);
 
   const onPostSubmit = async (
     title: string,
@@ -39,6 +41,10 @@ export const App = () => {
       <Routes>
         <Route path="/" element={<AuthForm />} />
         <Route
+          path="/posts/myposts"
+          element={<MyPostLists myPosts={myPosts} />}
+        />
+        <Route
           path="/posts"
           element={
             <AllPostsProvider>
@@ -61,12 +67,12 @@ export const App = () => {
           element={
             <div className="m-3">
               <AllPostsProvider>
-              <PostForm
-                availableTags={tags?.map((tag: Tag) => tag?.name)}
-                onSubmit={onPostSubmit}
-                loading={createPostFunc.loading}
-                error={createPostFunc.error}
-              />
+                <PostForm
+                  availableTags={tags?.map((tag: Tag) => tag?.name)}
+                  onSubmit={onPostSubmit}
+                  loading={createPostFunc.loading}
+                  error={createPostFunc.error}
+                />
               </AllPostsProvider>
             </div>
           }
@@ -86,4 +92,3 @@ export const App = () => {
     </Container>
   );
 };
-
