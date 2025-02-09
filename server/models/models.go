@@ -37,6 +37,7 @@ type User struct {
 	LastName     string        `gorm:"not null;size:100" json:"last_name"`
 	Email        string        `gorm:"not null;size:100;unique" json:"email"`
 	HashPassword string        `gorm:"not null;size:100" json:"hash_password"`
+	Image        string        `gorm:"type:text" json:"image"`
 	Comments     []Comment     `gorm:"constraint:OnDelete:CASCADE;" json:"comments"`
 	Posts        []Post        `gorm:"constraint:OnDelete:CASCADE;" json:"posts"`
 	PostLikes    []PostLike    `gorm:"constraint:OnDelete:CASCADE;" json:"post_likes"`

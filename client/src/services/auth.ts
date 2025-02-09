@@ -36,3 +36,62 @@ export const signUp = async ({
   });
   return response;
 };
+
+type GetUserInfoProps = {
+  id: string;
+};
+export const getUserInfo = async ({ id }: GetUserInfoProps) => {
+  const response = await makeRequest({
+    url: `/auth/userInfo/${id}`,
+  });
+  return response;
+};
+
+type UpdateUserInfoProps = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  file?: File;
+};
+export const updateUserInfo = async ({
+  firstName,
+  lastName,
+  email,
+  file,
+}: UpdateUserInfoProps) => {
+  const formData = new FormData();
+  formData.append("firstName", firstName);
+  formData.append("lastName", lastName);
+  formData.append("email", email);
+  if (file) {
+    formData.append("image", file);
+  }
+  const response = await makeRequest({
+    url: `/auth/updateUserInfo`,
+    options: {
+      method: "PUT",
+      data: formData,
+    },
+  });
+  return response;
+};
+
+type UpdatePasswordProps = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+export const updatePassword = async ({
+  oldPassword,
+  newPassword,
+  confirmPassword,
+}: UpdatePasswordProps) => {
+  const response = await makeRequest({
+    url: `/auth/updatePassword`,
+    options: {
+      method: "PUT",
+      data: { oldPassword, newPassword, confirmPassword },
+    },
+  });
+  return response;
+};

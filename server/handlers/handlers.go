@@ -13,6 +13,112 @@ import (
 	"time"
 )
 
+func HandleUserInfo(ctx *fiber.Ctx, db *gorm.DB) error {
+	userID := ctx.Params("userId")
+
+	user := models.User{}
+	if err := db.Where("id = ?", userID).Find(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to retrieve user"})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"email":     user.Email,
+		"imageUrl":  user.Image,
+	})
+}
+
+func HandleUpdateUserInfo(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
+	var Body struct {
+		FirstName string `json:"firstName"`
+		LastName  string `json:"lastName"`
+		Email     string `json:"email"`
+	}
+
+	if err := ctx.BodyParser(&Body); err != nil {
+		return ctx.JSON(fiber.Map{"message": "Invalid request body"})
+	}
+
+	userID := ctx.Cookies("userId")
+	if userID == "" {
+		return ctx.JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	user := models.User{}
+	if err := db.Where("id = ?", userID).Find(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to retrieve user"})
+	}
+
+	user.FirstName = Body.FirstName
+	user.LastName = Body.LastName
+	user.Email = Body.Email
+
+	if file, err := ctx.FormFile("image"); err == nil && file != nil {
+		imageKey := uuid.New().String() + file.Filename
+		fileContent, err := file.Open()
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
+		}
+		defer fileContent.Close()
+
+		if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, user.Image); err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete old image"})
+		}
+
+		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to upload image"})
+		}
+
+		user.Image = imageUrl
+	}
+
+	if err := db.Save(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to update user"})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "User Info updated successfully"})
+}
+
+func HandleUpdatePassword(ctx *fiber.Ctx, db *gorm.DB) error {
+	var Body struct {
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"newPassword"`
+	}
+
+	if err := ctx.BodyParser(&Body); err != nil {
+		return ctx.JSON(fiber.Map{"message": "Invalid request body"})
+	}
+
+	userID := ctx.Cookies("userId")
+	if userID == "" {
+		return ctx.JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	user := models.User{}
+	if err := db.Where("id = ?", userID).Find(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to retrieve user"})
+	}
+
+	if err := db_aws.VerifyPassword(Body.OldPassword, user.HashPassword); err != nil {
+		return ctx.JSON(fiber.Map{"message": "Invalid old password"})
+	}
+
+	hashedPassword, err := db_aws.HashPassword(Body.NewPassword)
+	if err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to hash password"})
+	}
+
+	user.HashPassword = hashedPassword
+
+	if err := db.Save(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to update user"})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Password updated successfully"})
+}
+
 func HandleSignIn(ctx *fiber.Ctx, db *gorm.DB) error {
 	var Body struct {
 		Email    string `json:"email"`
@@ -269,6 +375,7 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 			tx.Rollback()
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
 		}
+		defer fileContent.Close()
 
 		imageUrl, err = db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
 		if err != nil {
@@ -348,6 +455,7 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
 			tx.Rollback()
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to open file"})
 		}
+		defer fileContent.Close()
 
 		if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey); err != nil {
 			tx.Rollback()

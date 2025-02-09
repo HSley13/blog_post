@@ -5,6 +5,16 @@ import { signIn, signUp } from "../services/auth";
 import { useAsyncFn } from "../hooks/useAsync";
 import { useNavigate } from "react-router-dom";
 
+interface AuthFormState {
+  signInEmail: string;
+  signInPassword: string;
+  signUpFirstName: string;
+  signUpLastName: string;
+  signUpEmail: string;
+  signUpPassword: string;
+  signUpConfirmPassword: string;
+}
+
 export const AuthForm: React.FC = () => {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -12,13 +22,23 @@ export const AuthForm: React.FC = () => {
   const handleSignInFn = useAsyncFn(signIn);
   const handleSignUpFn = useAsyncFn(signUp);
 
-  const signInEmailRef = React.useRef<HTMLInputElement>(null);
-  const signInPasswordRef = React.useRef<HTMLInputElement>(null);
-  const signUpFirstNameRef = React.useRef<HTMLInputElement>(null);
-  const signUpLastNameRef = React.useRef<HTMLInputElement>(null);
-  const signUpEmailRef = React.useRef<HTMLInputElement>(null);
-  const signUpPasswordRef = React.useRef<HTMLInputElement>(null);
-  const signUpConfirmPasswordRef = React.useRef<HTMLInputElement>(null);
+  const [formState, setFormState] = useState<AuthFormState>({
+    signInEmail: "",
+    signInPassword: "",
+    signUpFirstName: "",
+    signUpLastName: "",
+    signUpEmail: "",
+    signUpPassword: "",
+    signUpConfirmPassword: "",
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormState((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
 
   const validateFields = (fields: Record<string, string>) => {
     const newErrors: Record<string, boolean> = {};
@@ -32,14 +52,19 @@ export const AuthForm: React.FC = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = signInEmailRef.current!.value;
-    const password = signInPasswordRef.current!.value;
-
-    if (!validateFields({ email, password })) {
+    if (
+      !validateFields({
+        signInEmail: formState.signInEmail,
+        signInPassword: formState.signInPassword,
+      })
+    ) {
       return;
     }
 
-    const signInResponse = await handleSignInFn.execute({ email, password });
+    const signInResponse = await handleSignInFn.execute({
+      email: formState.signInEmail,
+      password: formState.signInPassword,
+    });
 
     if (signInResponse.message) {
       alert(signInResponse.message || "Sign In failed");
@@ -50,40 +75,44 @@ export const AuthForm: React.FC = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const firstName = signUpFirstNameRef.current!.value;
-    const lastName = signUpLastNameRef.current!.value;
-    const email = signUpEmailRef.current!.value;
-    const password = signUpPasswordRef.current!.value;
-    const confirmPassword = signUpConfirmPasswordRef.current!.value;
-
     if (
-      !validateFields({ firstName, lastName, email, password, confirmPassword })
-    )
+      !validateFields({
+        signUpFirstName: formState.signUpFirstName,
+        signUpLastName: formState.signUpLastName,
+        signUpEmail: formState.signUpEmail,
+        signUpPassword: formState.signUpPassword,
+        signUpConfirmPassword: formState.signUpConfirmPassword,
+      })
+    ) {
       return;
+    }
 
-    if (password !== confirmPassword) {
+    if (formState.signUpPassword !== formState.signUpConfirmPassword) {
       alert("Passwords do not match");
       return;
     }
 
     const signUpResponse = await handleSignUpFn.execute({
-      firstName,
-      lastName,
-      email,
-      password,
+      firstName: formState.signUpFirstName,
+      lastName: formState.signUpLastName,
+      email: formState.signUpEmail,
+      password: formState.signUpPassword,
     });
 
     if (signUpResponse.message) {
       alert(signUpResponse.message || "Sign Up failed");
+    } else {
+      alert("Sign Up successful");
+      setFormState({
+        signInEmail: "",
+        signInPassword: "",
+        signUpFirstName: "",
+        signUpLastName: "",
+        signUpEmail: "",
+        signUpPassword: "",
+        signUpConfirmPassword: "",
+      });
     }
-
-    signUpFirstNameRef.current!.value = "";
-    signUpLastNameRef.current!.value = "";
-    signUpEmailRef.current!.value = "";
-    signUpPasswordRef.current!.value = "";
-    signUpConfirmPasswordRef.current!.value = "";
-
-    alert("Sign Up successful");
   };
 
   return (
@@ -95,16 +124,20 @@ export const AuthForm: React.FC = () => {
           <h1>Sign in</h1>
           <span>or use your account</span>
           <Form.Control
-            ref={signInEmailRef}
+            name="signInEmail"
             type="email"
             placeholder="Email"
-            className={`my-3 ${errors.email ? "invalid" : ""}`}
+            value={formState.signInEmail}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signInEmail ? "invalid" : ""}`}
           />
           <Form.Control
-            ref={signInPasswordRef}
+            name="signInPassword"
             type="password"
             placeholder="Password"
-            className={`my-3 ${errors.password ? "invalid" : ""}`}
+            value={formState.signInPassword}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signInPassword ? "invalid" : ""}`}
           />
           <div className="d-flex justify-content-end">
             <a href="#" style={{ fontSize: "0.7rem" }}>
@@ -124,34 +157,44 @@ export const AuthForm: React.FC = () => {
           <h1>Sign up</h1>
           <span>or use your email for registration</span>
           <Form.Control
-            ref={signUpFirstNameRef}
+            name="signUpFirstName"
             type="text"
             placeholder="First Name"
-            className={`my-3 ${errors.firstName ? "invalid" : ""}`}
+            value={formState.signUpFirstName}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signUpFirstName ? "invalid" : ""}`}
           />
           <Form.Control
-            ref={signUpLastNameRef}
+            name="signUpLastName"
             type="text"
             placeholder="Last Name"
-            className={`my-3 ${errors.lastName ? "invalid" : ""}`}
+            value={formState.signUpLastName}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signUpLastName ? "invalid" : ""}`}
           />
           <Form.Control
-            ref={signUpEmailRef}
+            name="signUpEmail"
             type="email"
             placeholder="Email"
-            className={`my-3 ${errors.email ? "invalid" : ""}`}
+            value={formState.signUpEmail}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signUpEmail ? "invalid" : ""}`}
           />
           <Form.Control
-            ref={signUpPasswordRef}
+            name="signUpPassword"
             type="password"
             placeholder="Password"
-            className={`my-3 ${errors.password ? "invalid" : ""}`}
+            value={formState.signUpPassword}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signUpPassword ? "invalid" : ""}`}
           />
           <Form.Control
-            ref={signUpConfirmPasswordRef}
+            name="signUpConfirmPassword"
             type="password"
             placeholder="Confirm Password"
-            className={`my-3 ${errors.confirmPassword ? "invalid" : ""}`}
+            value={formState.signUpConfirmPassword}
+            onChange={handleInputChange}
+            className={`my-3 ${errors.signUpConfirmPassword ? "invalid" : ""}`}
           />
           <div className="d-flex align-items-center justify-content-end my-3">
             <Button variant="primary" type="submit">

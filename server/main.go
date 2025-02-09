@@ -49,6 +49,15 @@ func main() {
 	app.Post("/auth/signUp", func(ctx *fiber.Ctx) error {
 		return handlers.HandleSignUp(ctx, db)
 	})
+	app.Get("/auth/userInfo/:userId", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUserInfo(ctx, db)
+	})
+	app.Put("/auth/updateUserInfo", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUpdateUserInfo(ctx, db, s3Client)
+	})
+	app.Put("/auth/updatePassword", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUpdatePassword(ctx, db)
+	})
 	app.Get("/tags", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetTags(ctx, db)
 	})

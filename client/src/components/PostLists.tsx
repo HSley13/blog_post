@@ -3,8 +3,6 @@ import { PostCard } from "./PostCard";
 import { dateFormatter } from "./Comment";
 import { Post, Tag } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
-import { createPost } from "../services/posts";
-import { useAsyncFn } from "../hooks/useAsync";
 import { Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
@@ -13,8 +11,7 @@ import { FaUser } from "react-icons/fa";
 import { useUser } from "../hooks/useUser";
 
 export const PostList = () => {
-  const { loading, error, posts, tags } = useAllPostsContext();
-  const createPostFunc = useAsyncFn(createPost);
+  const { posts, tags } = useAllPostsContext();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [title, setTitle] = useState<string>("");
   const currentUser = useUser();
@@ -33,22 +30,6 @@ export const PostList = () => {
       return matchesTitle && matchesTags;
     });
   }, [posts, title, selectedTags]);
-
-  if (loading) {
-    return (
-      <Container className="text-center my-5">
-        <h1>Loading...</h1>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container className="text-center my-5">
-        <h1 className="error-msg">{createPostFunc.error?.message}</h1>
-      </Container>
-    );
-  }
 
   return (
     <Container className="my-4">

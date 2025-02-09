@@ -8,9 +8,8 @@ import React, {
 } from "react";
 import { useAsync } from "../hooks/useAsync";
 import { getPost } from "../services/posts";
-import { Container } from "react-bootstrap";
+import { Container, Spinner } from "react-bootstrap";
 import { Comment, Post } from "../types/types";
-// import { useWebSocket } from "../hooks/useWebsocket";
 
 type SinglePostContextValue = {
   post: Post | undefined;
@@ -118,6 +117,9 @@ export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
     >
       {loading ? (
         <Container className="text-center my-5">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
           <h1>Loading...</h1>
         </Container>
       ) : error ? (

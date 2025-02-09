@@ -1,9 +1,16 @@
 import { useUser } from "../hooks/useUser";
-import React from "react";
+import React, { useState } from "react";
 import { Form, Button, Row, Col, Stack } from "react-bootstrap";
-import { useState } from "react";
 import CreatableReactSelect from "react-select/creatable";
 import { useNavigate } from "react-router-dom";
+
+interface PostFormState {
+  title: string;
+  body: string;
+  image: File | null;
+  imagePreview: string | null;
+  tags: { label: string; value: string }[];
+}
 
 type PostFormProps = {
   onSubmit: (
@@ -32,39 +39,57 @@ export const PostForm = ({
   availableTags,
   initialTags,
 }: PostFormProps) => {
-  const titleRef = React.useRef<HTMLInputElement>(null);
-  const bodyRef = React.useRef<HTMLTextAreaElement>(null);
   const currentUser = useUser();
   const navigate = useNavigate();
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(imgUrl);
-  const [tagsValue, setTagsValue] = useState<
-    { label: string; value: string }[]
-  >(initialTags?.map((tag: string) => ({ label: tag, value: tag })) || []);
+
+  const [formState, setFormState] = useState<PostFormState>({
+    title: title || "",
+    body: body || "",
+    image: null,
+    imagePreview: imgUrl || null,
+    tags: initialTags?.map((tag: string) => ({ label: tag, value: tag })) || [],
+  });
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    e.preventDefault();
+    const { name, value } = e.target;
+    setFormState((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const file = e.target.files ? e.target.files[0] : null;
+    if (file) {
+      setFormState((prevState) => ({
+        ...prevState,
+        image: file,
+        imagePreview: URL.createObjectURL(file),
+      }));
+    }
+  };
+
+  const handleTagsChange = (selectedOptions: any) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      tags: selectedOptions || [],
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(
-      titleRef.current!.value,
-      bodyRef.current!.value,
+      formState.title,
+      formState.body,
       currentUser?.id || "",
-      image || new File([], ""),
-      tagsValue.map((tag) => tag.value),
+      formState.image || new File([], ""),
+      formState.tags.map((tag) => tag.value),
     );
-    titleRef.current!.value = "";
-    bodyRef.current!.value = "";
-    setImage(null);
-    setImagePreview(null);
-    setTagsValue([]);
     navigate(-1);
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
   };
 
   return (
@@ -74,8 +99,9 @@ export const PostForm = ({
           <Form.Label>Title</Form.Label>
           <Form.Control
             type="text"
-            ref={titleRef}
-            defaultValue={title || ""}
+            name="title"
+            value={formState.title}
+            onChange={handleInputChange}
             placeholder="Add title"
             disabled={loading}
           />
@@ -86,22 +112,17 @@ export const PostForm = ({
             <CreatableReactSelect
               onCreateOption={(label) => {
                 const newTag = { label, value: label };
-                setTagsValue((prev) => [...prev, newTag]);
+                setFormState((prevState) => ({
+                  ...prevState,
+                  tags: [...prevState.tags, newTag],
+                }));
               }}
-              value={tagsValue}
+              value={formState.tags}
               options={availableTags?.map((tag) => ({
                 label: tag,
                 value: tag,
               }))}
-              onChange={(selectedOptions) => {
-                if (selectedOptions) {
-                  setTagsValue(
-                    selectedOptions as { label: string; value: string }[],
-                  );
-                } else {
-                  setTagsValue([]);
-                }
-              }}
+              onChange={handleTagsChange}
               isMulti
             />
           </Form.Group>
@@ -114,9 +135,9 @@ export const PostForm = ({
             onChange={handleImageChange}
             disabled={loading}
           />
-          {imagePreview && (
+          {formState.imagePreview && (
             <img
-              src={imagePreview}
+              src={formState.imagePreview}
               alt="Preview"
               className="mt-2"
               style={{ maxHeight: "200px", maxWidth: "100%" }}
@@ -127,8 +148,9 @@ export const PostForm = ({
       <Col className="mb-3">
         <Form.Control
           as="textarea"
-          defaultValue={body || ""}
-          ref={bodyRef}
+          name="body"
+          value={formState.body}
+          onChange={handleInputChange}
           rows={10}
           placeholder="Add body"
           disabled={loading}

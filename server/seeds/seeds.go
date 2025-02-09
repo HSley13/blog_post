@@ -15,11 +15,11 @@ func Seed(db *gorm.DB) {
 	db.Exec("DELETE FROM users")
 
 	users := []models.User{
-		{FirstName: "Tony", LastName: "STARK", Email: "tonystark@gmail.com", HashPassword: os.Getenv("HASH")},
-		{FirstName: "Steve", LastName: "ROGERS", Email: "steverogers@gmail.com", HashPassword: os.Getenv("HASH")},
-		{FirstName: "Bruce", LastName: "WAYNE", Email: "brucewayne@gmail.com", HashPassword: os.Getenv("HASH")},
-		{FirstName: "Clark", LastName: "KENT", Email: "clarkkent@gmail.com", HashPassword: os.Getenv("HASH")},
-		{FirstName: "Sley", LastName: "HORTES", Email: "sleyhortes@gmail.com", HashPassword: os.Getenv("HASH")},
+		{FirstName: "Tony", LastName: "STARK", Email: "tonystark@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("ironman_icon")},
+		{FirstName: "Steve", LastName: "ROGERS", Email: "steverogers@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("captain_icon")},
+		{FirstName: "Bruce", LastName: "WAYNE", Email: "brucewayne@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("batman_icon")},
+		{FirstName: "Clark", LastName: "KENT", Email: "clarkkent@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("superman_icon")},
+		{FirstName: "Sley", LastName: "HORTES", Email: "sleyhortes@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("gojo_icon")},
 	}
 	db.Create(&users)
 

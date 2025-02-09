@@ -78,3 +78,19 @@ This is a web application I built using **TypeScript** for the frontend and **Go
 ### Post Edit Form
 
 ![Edit Form](previews/4.png)
+
+### Profile --> User(Owner) can edit/delete his profile
+
+![Profile Form --> Owner can edit profile](previews/5.png)
+
+### Edit Profile
+
+![Profile Form](previews/6.png)
+
+### Profile: Change password
+
+![Change Password](previews/7.png)
+
+### Profile ---> User(Non-owner) can't edit/delete others' profile
+
+![Profile Form --> Non-owner cannot edit profile](previews/8.png)

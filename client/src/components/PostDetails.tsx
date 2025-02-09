@@ -16,7 +16,6 @@ export const PostDetails = ({
   onTogglePostLike,
   onEdit,
   onDelete,
-  toggleLocalPostLike,
 }: PostDetailsProps) => {
   return (
     <Row>

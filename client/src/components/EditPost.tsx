@@ -4,10 +4,11 @@ import { PostForm } from "./PostForm";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { useAsyncFn } from "../hooks/useAsync";
 import { updatePost } from "../services/posts";
+import { Container, Spinner, Alert } from "react-bootstrap";
 
 export const EditPost = () => {
   const { id } = useParams();
-  const { post } = useSinglePostContext();
+  const { loading, error, post } = useSinglePostContext();
   const { updateLocalPost, tags } = useAllPostsContext();
   const updatePostFn = useAsyncFn(updatePost);
 
@@ -34,6 +35,28 @@ export const EditPost = () => {
       updatedPost.tags,
     );
   };
+
+  if (loading) {
+    return (
+      <Container className="mt-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+        <p>Loading user information...</p>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="mt-5">
+        <Alert variant="danger">
+          <Alert.Heading>Error</Alert.Heading>
+          <p>{error?.message || "Failed to load user information."}</p>
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <PostForm
