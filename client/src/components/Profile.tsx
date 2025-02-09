@@ -18,6 +18,9 @@ import { PostCard } from "./PostCard";
 import { dateFormatter } from "./Comment";
 import { useAsyncFn, useAsync } from "../hooks/useAsync";
 import { getUserInfo, updateUserInfo, updatePassword } from "../services/auth";
+import { ConfirmationModal } from "./ConfirmationModal";
+import { useNavigate } from "react-router-dom";
+import { deleteUser } from "../services/auth";
 
 interface User {
   firstName: string;
@@ -34,6 +37,19 @@ export const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const isOwner = currentUser?.id === id;
   const { posts } = useAllPostsContext();
+  const navigate = useNavigate();
+  const deleteUserFn = useAsyncFn(deleteUser);
+
+  const [showModal, setShowModal] = useState(false);
+
+  const handleConfirmDeleteProfile = () => {
+    setShowModal(false);
+    //TODO: delete user on the server
+  };
+
+  const handleCancelDeleteProfile = () => {
+    setShowModal(false);
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -172,19 +188,21 @@ export const Profile = () => {
     }));
   };
 
-  const handleDeleteProfile = async () => {
+  const handleDeleteUser = async () => {
     const confirm = window.confirm(
       "Are you sure you want to delete your profile?",
     );
-    if (confirm) {
-      // await updateUserInfoFn.execute({
-      //   firstName: "",
-      //   lastName: "",
-      //   email: "",
-      //   file: null,
-      // });
-      alert("Profile deleted successfully");
+
+    if (!confirm) return;
+
+    const response = await deleteUserFn.execute();
+    if (response.message) {
+      alert(response.message || "Delete failed");
+    } else {
+      alert("Delete successful");
     }
+
+    navigate("/");
   };
 
   const handleCancelEdit = () => {
@@ -238,6 +256,13 @@ export const Profile = () => {
 
   return (
     <>
+      <ConfirmationModal
+        show={showModal}
+        onConfirm={handleConfirmDeleteProfile}
+        onCancel={handleCancelDeleteProfile}
+        question="Are you sure you want to delete your profile?"
+      />
+
       <Container className="mt-5 p-4 shadow-sm border rounded">
         <Row>
           <Col md={6} className="border-end pe-4">
@@ -376,7 +401,8 @@ export const Profile = () => {
                   <Button
                     variant="danger"
                     className="ms-2"
-                    onClick={handleDeleteProfile}
+                    // onClick={() => setShowModal(true)}
+                    onClick={handleDeleteUser}
                   >
                     Delete Profile
                   </Button>

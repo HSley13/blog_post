@@ -212,6 +212,32 @@ func HandleSignUp(ctx *fiber.Ctx, db *gorm.DB) error {
 	return ctx.JSON(newUser)
 }
 
+func HandleDeleteUser(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
+	userID := ctx.Cookies("userId")
+	if userID == "" {
+		return ctx.JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	user := models.User{}
+	if err := db.Where("id = ?", userID).Find(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to retrieve user"})
+	}
+
+	if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, user.Image); err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to delete user image"})
+	}
+
+	if err := db.Where("post_id IN (SELECT id FROM posts WHERE user_id = ?)", userID).Delete(&models.PostTag{}).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to delete post tags"})
+	}
+
+	if err := db.Delete(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"message": "Failed to delete user"})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "User deleted successfully"})
+}
+
 func HandleGetTags(ctx *fiber.Ctx, db *gorm.DB) error {
 	tags := []models.Tag{}
 	if err := db.Find(&tags).Error; err != nil {

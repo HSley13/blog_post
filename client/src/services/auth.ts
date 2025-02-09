@@ -95,3 +95,13 @@ export const updatePassword = async ({
   });
   return response;
 };
+
+export const deleteUser = async () => {
+  const response = await makeRequest({
+    url: `/auth/deleteUser`,
+    options: {
+      method: "DELETE",
+    },
+  });
+  return response;
+};

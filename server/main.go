@@ -58,6 +58,9 @@ func main() {
 	app.Put("/auth/updatePassword", func(ctx *fiber.Ctx) error {
 		return handlers.HandleUpdatePassword(ctx, db)
 	})
+	app.Delete("/auth/deleteUser", func(ctx *fiber.Ctx) error {
+		return handlers.HandleDeleteUser(ctx, db, s3Client)
+	})
 	app.Get("/tags", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetTags(ctx, db)
 	})

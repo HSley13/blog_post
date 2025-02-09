@@ -15,6 +15,7 @@ import {
   toggleCommentLike,
 } from "../services/comments";
 import { useUser } from "../hooks/useUser";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 type CommentProps = {
   id: string;
@@ -58,6 +59,7 @@ export const Comment = ({
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const currentUser = useUser();
+  const [showModal, setShowModal] = useState(false);
 
   const onCommentReply = async (message: string) => {
     const newComment = await createCommentFunc.execute({
@@ -79,12 +81,27 @@ export const Comment = ({
     updateLocalComment(updatedComment.id, updatedComment.message);
   };
 
-  const onCommentDelete = async () => {
+  const handleConfirmDeleteComment = async () => {
+    await onDeleteComment();
+    setShowModal(false);
+  };
+
+  const onDeleteComment = async () => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete your comment?",
+    );
+
+    if (!confirm) return;
+
     const deletedComment = await deleteCommentFunc.execute({
       postId: post?.id || "",
       id,
     });
     deleteLocalComment(deletedComment.id);
+  };
+
+  const handleCancelDeleteComment = () => {
+    setShowModal(false);
   };
 
   const onToggleCommentLike = async () => {
@@ -97,6 +114,13 @@ export const Comment = ({
 
   return (
     <>
+      <ConfirmationModal
+        show={showModal}
+        onConfirm={handleConfirmDeleteComment}
+        onCancel={handleCancelDeleteComment}
+        question="Are you sure you want to delete your comment?"
+      />
+
       <Card className="mb-2">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -155,7 +179,8 @@ export const Comment = ({
                 <IconButton
                   Icon={FaTrash}
                   disabled={deleteCommentFunc.loading}
-                  onClick={onCommentDelete}
+                  onClick={onDeleteComment}
+                  // onClick={() => setShowModal(true)}
                   color="red"
                 />
               </>
