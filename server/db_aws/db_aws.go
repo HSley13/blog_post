@@ -177,7 +177,7 @@ func InitDb() *gorm.DB {
 		log.Fatalf("Failed to enable UUID extension: %v", err)
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.PostLike{}, &models.CommentLike{})
+	err = db.AutoMigrate(&models.User{}, &models.Post{}, &models.Comment{}, &models.PostLike{}, &models.CommentLike{}, &models.Code{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
@@ -194,4 +194,19 @@ func GetOrCreateUser(db *gorm.DB, username string) models.User {
 		}
 	}
 	return user
+}
+
+func cleanExpiredCodes(db *gorm.DB) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		log.Println("Cleaning expired codes...")
+		result := db.Where("expire_at < ?", time.Now()).Delete(&models.Code{})
+		if result.Error != nil {
+			log.Printf("Failed to delete expired codes: %v", result.Error)
+		} else {
+			log.Printf("Deleted %d expired codes", result.RowsAffected)
+		}
+	}
 }

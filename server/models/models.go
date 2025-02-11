@@ -24,6 +24,14 @@ type PostLike struct {
 	Post   Post   `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE;onUpdate:CASCADE;" json:"post"`
 }
 
+type Code struct {
+	ID       string    `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()" json:"id"`
+	UserID   string    `gorm:"not null;type:uuid;index" json:"user_id"`
+	User     User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;onUpdate:CASCADE" json:"user"`
+	Code     string    `gorm:"not null;type:text" json:"code"`
+	ExpireAt time.Time `gorm:"not null" json:"expire_at"`
+}
+
 type CommentLike struct {
 	UserID    string  `gorm:"primaryKey;type:uuid" json:"user_id"`
 	CommentID string  `gorm:"primaryKey;type:uuid" json:"comment_id"`

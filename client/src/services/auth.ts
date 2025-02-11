@@ -77,20 +77,14 @@ export const updateUserInfo = async ({
 };
 
 type UpdatePasswordProps = {
-  oldPassword: string;
   newPassword: string;
-  confirmPassword: string;
 };
-export const updatePassword = async ({
-  oldPassword,
-  newPassword,
-  confirmPassword,
-}: UpdatePasswordProps) => {
+export const updatePassword = async ({ newPassword }: UpdatePasswordProps) => {
   const response = await makeRequest({
     url: `/auth/updatePassword`,
     options: {
       method: "PUT",
-      data: { oldPassword, newPassword, confirmPassword },
+      data: { newPassword },
     },
   });
   return response;
@@ -101,6 +95,17 @@ export const deleteUser = async () => {
     url: `/auth/deleteUser`,
     options: {
       method: "DELETE",
+    },
+  });
+  return response;
+};
+
+export const passwordForgotten = async ({ email }: { email: string }) => {
+  const response = await makeRequest({
+    url: `/auth/passwordForgotten`,
+    options: {
+      method: "POST",
+      data: { email },
     },
   });
   return response;

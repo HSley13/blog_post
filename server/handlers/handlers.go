@@ -4,12 +4,15 @@ import (
 	"comment/db_aws"
 	"comment/models"
 
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
+	gomail "gopkg.in/gomail.v2"
 	"gorm.io/gorm"
 	"log"
+	"os"
 	"time"
 )
 
@@ -27,6 +30,45 @@ func HandleUserInfo(ctx *fiber.Ctx, db *gorm.DB) error {
 		"email":     user.Email,
 		"imageUrl":  user.Image,
 	})
+}
+
+func HandlePasswordForgotten(ctx *fiber.Ctx, db *gorm.DB) error {
+	var Body struct {
+		Email string `json:"email"`
+	}
+
+	if err := ctx.BodyParser(&Body); err != nil {
+		return ctx.JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	user := models.User{}
+	if err := db.Where("email = ?", Body.Email).Find(&user).Error; err != nil {
+		return ctx.JSON(fiber.Map{"error": "Failed to retrieve user"})
+	}
+
+	if user.ID == "" {
+		return ctx.JSON(fiber.Map{"error": "Invalid email"})
+	}
+
+	code := uuid.New().String()[:6]
+
+	codeData := models.Code{
+		ID:       uuid.New().String(),
+		UserID:   user.ID,
+		Code:     code,
+		ExpireAt: time.Now().Add(105 * time.Second),
+	}
+
+	if err := db.Create(&codeData).Error; err != nil {
+		return ctx.JSON(fiber.Map{"error": "Failed to create code"})
+	}
+
+	err := SendEmail(Body.Email, code)
+	if err != nil {
+		return ctx.JSON(fiber.Map{"error": "Failed to send email"})
+	}
+
+	return ctx.JSON(fiber.Map{"message": "Email sent"})
 }
 
 func HandleUpdateUserInfo(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) error {
@@ -83,7 +125,6 @@ func HandleUpdateUserInfo(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) erro
 
 func HandleUpdatePassword(ctx *fiber.Ctx, db *gorm.DB) error {
 	var Body struct {
-		OldPassword string `json:"oldPassword"`
 		NewPassword string `json:"newPassword"`
 	}
 
@@ -99,10 +140,6 @@ func HandleUpdatePassword(ctx *fiber.Ctx, db *gorm.DB) error {
 	user := models.User{}
 	if err := db.Where("id = ?", userID).Find(&user).Error; err != nil {
 		return ctx.JSON(fiber.Map{"message": "Failed to retrieve user"})
-	}
-
-	if err := db_aws.VerifyPassword(Body.OldPassword, user.HashPassword); err != nil {
-		return ctx.JSON(fiber.Map{"message": "Invalid old password"})
 	}
 
 	hashedPassword, err := db_aws.HashPassword(Body.NewPassword)
@@ -742,4 +779,23 @@ func BroadcastMessage(message interface{}) {
 			delete(clients, client)
 		}
 	}
+}
+
+func SendEmail(recipientEmail string, code string) error {
+	emailBody := fmt.Sprintf("Your password reset code is: %s. It will expire in 1 minute and 45 seconds.", code)
+
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", os.Getenv("EMAIL"))
+	msg.SetHeader("To", recipientEmail)
+	msg.SetHeader("Subject", "Password Reset Code")
+	msg.SetBody("text/plain", emailBody)
+
+	dialer := gomail.NewDialer("smtp.gmail.com", 587, os.Getenv("EMAIL"), os.Getenv("EMAIL_PASSWORD"))
+
+	if err := dialer.DialAndSend(msg); err != nil {
+		log.Println("Failed to send email:", err)
+		return err
+	}
+
+	return nil
 }

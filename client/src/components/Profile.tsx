@@ -24,14 +24,8 @@ export const Profile = () => {
   const updateUserInfoFn = useAsyncFn(updateUserInfo);
   const updatePasswordFn = useAsyncFn(updatePassword);
 
-  const {
-    loading: userInfoLoading,
-    error: userInfoError,
-    value: userInfo,
-  } = useAsync(() => {
-    if (id) {
-      return getUserInfo({ id: id });
-    }
+  const userInfoFn = useAsync(() => {
+    return getUserInfo({ id: id });
   }, [id]);
 
   const myPosts = useMemo(() => {
@@ -75,15 +69,9 @@ export const Profile = () => {
     }
   };
 
-  const handleUpdatePassword = async (passwords: {
-    oldPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => {
+  const handleUpdatePassword = async (passwords: { newPassword: string }) => {
     const updatePasswordResponse = await updatePasswordFn.execute({
-      oldPassword: passwords.oldPassword,
       newPassword: passwords.newPassword,
-      confirmPassword: passwords.confirmPassword,
     });
 
     if (updatePasswordResponse.message) {
@@ -93,7 +81,7 @@ export const Profile = () => {
     }
   };
 
-  if (userInfoLoading) {
+  if (userInfoFn.loading) {
     return (
       <Container className="mt-5 text-center">
         <Spinner animation="border" role="status">
@@ -104,12 +92,14 @@ export const Profile = () => {
     );
   }
 
-  if (userInfoError) {
+  if (userInfoFn.error) {
     return (
       <Container className="mt-5">
         <Alert variant="danger">
           <Alert.Heading>Error</Alert.Heading>
-          <p>{userInfoError.message || "Failed to load user information."}</p>
+          <p>
+            {userInfoFn.error.message || "Failed to load user information."}
+          </p>
         </Alert>
       </Container>
     );
@@ -117,9 +107,9 @@ export const Profile = () => {
 
   return (
     <>
-      {userInfo && (
+      {userInfoFn.value && (
         <UserInfoCard
-          user={userInfo}
+          user={userInfoFn.value}
           isOwner={isOwner}
           onDeleteUser={handleDeleteUser}
           onUpdateUserInfo={handleUpdateUserInfo}
@@ -127,7 +117,7 @@ export const Profile = () => {
         />
       )}
 
-      <Container className="my-4">
+      <Container className="my-4 text-center">
         <h1>Posts</h1>
         <Row xs={1} md={2} xl={2} className="g-3">
           {myPosts?.map((post: Post) => (

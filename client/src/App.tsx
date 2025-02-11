@@ -12,6 +12,7 @@ import { Tag } from "./types/types";
 import { EditPost } from "./components/EditPost";
 import { AuthForm } from "./components/AuthForm";
 import { Profile } from "./components/Profile";
+import { PasswordRecoveryForm } from "./components/PasswordRecoveryForm";
 
 export const App = () => {
   const { tags, createLocalPost } = useAllPostsContext();
@@ -38,6 +39,7 @@ export const App = () => {
     <Container>
       <Routes>
         <Route path="/" element={<AuthForm />} />
+        <Route path="/password-recovery" element={<PasswordRecoveryForm />} />
         <Route path="/profile/:id" element={<Profile />} />
         <Route path="/posts" element={<PostList />} />
         <Route

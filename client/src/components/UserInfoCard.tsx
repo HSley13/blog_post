@@ -17,11 +17,7 @@ type UserInfoCardProps = {
     email: string;
     file?: File;
   }) => Promise<void>;
-  onUpdatePassword: (passwords: {
-    oldPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => Promise<void>;
+  onUpdatePassword: (passwords: { newPassword: string }) => Promise<void>;
 };
 
 export const UserInfoCard = ({
@@ -84,7 +80,6 @@ export const UserInfoCard = ({
   const handleChangePassword = async () => {
     if (
       !validateFields({
-        oldPassword: localUser.oldPassword,
         newPassword: localUser.newPassword,
         confirmPassword: localUser.confirmPassword,
       })
@@ -98,15 +93,12 @@ export const UserInfoCard = ({
     }
 
     await onUpdatePassword({
-      oldPassword: localUser.oldPassword,
       newPassword: localUser.newPassword,
-      confirmPassword: localUser.confirmPassword,
     });
 
     setIsChangingPassword(false);
     setLocalUser((prevUser) => ({
       ...prevUser,
-      oldPassword: "",
       newPassword: "",
       confirmPassword: "",
     }));
@@ -123,7 +115,6 @@ export const UserInfoCard = ({
     setIsChangingPassword(false);
     setLocalUser((prevUser) => ({
       ...prevUser,
-      oldPassword: "",
       newPassword: "",
       confirmPassword: "",
     }));
@@ -224,36 +215,22 @@ export const UserInfoCard = ({
         )}
         {isChangingPassword && (
           <Form className="mt-3">
-            <Form.Group className="mb-3">
-              <Form.Label>Old Password</Form.Label>
-              <Form.Control
-                className={`my-3 ${errors.oldPassword ? "invalid" : ""}`}
-                type="password"
-                name="oldPassword"
-                value={localUser.oldPassword}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>New Password</Form.Label>
-              <Form.Control
-                className={`my-3 ${errors.newPassword ? "invalid" : ""}`}
-                type="password"
-                name="newPassword"
-                value={localUser.newPassword}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Confirm New Password</Form.Label>
-              <Form.Control
-                className={`my-3 ${errors.confirmPassword ? "invalid" : ""}`}
-                type="password"
-                name="confirmPassword"
-                value={localUser.confirmPassword}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
+            <Form.Control
+              className={`my-3 ${errors.newPassword ? "invalid" : ""}`}
+              type="password"
+              name="newPassword"
+              value={localUser.newPassword}
+              placeholder="Enter new password"
+              onChange={handleInputChange}
+            />
+            <Form.Control
+              className={`my-3 ${errors.confirmPassword ? "invalid" : ""}`}
+              type="password"
+              name="confirmPassword"
+              value={localUser.confirmPassword}
+              onChange={handleInputChange}
+              placeholder="Confirm new password"
+            />
             <Col className="mb-2">
               <Button variant="success" onClick={handleChangePassword}>
                 Save New Password

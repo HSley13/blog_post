@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, Form } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import "../styles/AuthForm.css";
 import { signIn, signUp } from "../services/auth";
 import { useAsyncFn } from "../hooks/useAsync";
@@ -15,7 +16,7 @@ interface AuthFormState {
   signUpConfirmPassword: string;
 }
 
-export const AuthForm: React.FC = () => {
+export const AuthForm = () => {
   const [isRightPanelActive, setIsRightPanelActive] = useState(false);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
@@ -140,9 +141,9 @@ export const AuthForm: React.FC = () => {
             className={`my-3 ${errors.signInPassword ? "invalid" : ""}`}
           />
           <div className="d-flex justify-content-end">
-            <a href="#" style={{ fontSize: "0.7rem" }}>
+            <Link to="/password-recovery" style={{ fontSize: "0.7rem" }}>
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <div className="d-flex align-items-center justify-content-end my-3">
             <Button variant="primary" type="submit">

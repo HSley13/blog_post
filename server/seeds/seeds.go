@@ -19,7 +19,7 @@ func Seed(db *gorm.DB) {
 		{FirstName: "Steve", LastName: "ROGERS", Email: "steverogers@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("captain_icon")},
 		{FirstName: "Bruce", LastName: "WAYNE", Email: "brucewayne@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("batman_icon")},
 		{FirstName: "Clark", LastName: "KENT", Email: "clarkkent@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("superman_icon")},
-		{FirstName: "Sley", LastName: "HORTES", Email: "sleyhortes@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("gojo_icon")},
+		{FirstName: "Sley", LastName: "HORTES", Email: "sleyhortes13@gmail.com", HashPassword: os.Getenv("HASH"), Image: os.Getenv("gojo_icon")},
 	}
 	db.Create(&users)
 
