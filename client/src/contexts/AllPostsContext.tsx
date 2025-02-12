@@ -2,24 +2,15 @@ import React, { createContext, useEffect, useState, useContext } from "react";
 import { useAsync } from "../hooks/useAsync";
 import { getPosts, getTags } from "../services/posts";
 import { Container, Spinner } from "react-bootstrap";
-import { Post, Tag } from "../types/types";
+import { Post, Tag, Comment } from "../types/types";
+import { useWebSocketContext } from "./WebSocketContext";
+import { useUser } from "../hooks/useUser";
 
 type AllPostsContextValue = {
   posts: Post[] | undefined;
   tags: Tag[] | undefined;
   loading: boolean;
   error: Error | undefined;
-  createLocalPost: (post: Post) => void;
-  updateLocalPost: (
-    id: string,
-    title: string,
-    body: string,
-    updatedAt: string,
-    imageUrl?: string,
-    tags?: string[],
-  ) => void;
-  deleteLocalPost: (id: string) => void;
-  toggleLocalPostLike: (id: string, addLike: boolean) => void;
 };
 
 const Context = createContext<AllPostsContextValue>({
@@ -27,10 +18,6 @@ const Context = createContext<AllPostsContextValue>({
   tags: undefined,
   loading: false,
   error: undefined,
-  createLocalPost: () => {},
-  updateLocalPost: () => {},
-  deleteLocalPost: () => {},
-  toggleLocalPostLike: () => {},
 });
 
 export const useAllPostsContext = () => useContext(Context);
@@ -44,6 +31,70 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
 }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const currentUser = useUser();
+
+  const { socket, isConnected } = useWebSocketContext();
+
+  useEffect(() => {
+    if (socket && isConnected) {
+      socket.onmessage = (event: MessageEvent) => {
+        const message = JSON.parse(event.data);
+
+        switch (message.type) {
+          case "POST_ADDED":
+            createLocalPost(message.data);
+            break;
+
+          case "POST_UPDATED":
+            updateLocalPost(
+              message.data.id,
+              message.data.title,
+              message.data.body,
+              message.data.updatedAt,
+              message.data.imageUrl,
+              message.data.tags,
+            );
+            break;
+
+          case "POST_DELETED":
+            deleteLocalPost(message.data.id);
+            break;
+
+          case "POST_LIKED":
+            toggleLocalPostLike(message.data.id, message.data.addLike);
+            break;
+
+          case "COMMENT_ADDED":
+            addCommentToPost(message.data.postId, message.data.comment);
+            break;
+
+          case "COMMENT_UPDATED":
+            updateCommentInPost(
+              message.data.postId,
+              message.data.commentId,
+              message.data.message,
+              message.data.updatedAt,
+            );
+            break;
+
+          case "COMMENT_DELETED":
+            deleteCommentFromPost(message.data.postId, message.data.commentId);
+            break;
+
+          case "COMMENT_LIKED":
+            toggleLocalCommentLike(
+              message.data.postId,
+              message.data.commentId,
+              message.data.addLike,
+            );
+            break;
+
+          default:
+            console.warn("Unknown message type:", message.type);
+        }
+      };
+    }
+  }, [socket, isConnected]);
 
   const {
     loading: loadingPosts,
@@ -57,7 +108,6 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
   } = useAsync(getTags);
 
   const loading = loadingPosts || loadingTags;
-
   const error = errorPosts || errorTags;
 
   useEffect(() => {
@@ -97,14 +147,91 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
     setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
   };
 
-  const toggleLocalPostLike = (id: string, addLike: boolean) => {
+  const toggleLocalPostLike = (
+    id: string,
+    addLike: boolean,
+    userId: string,
+  ) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
         post.id === id
           ? {
               ...post,
               likeCount: post.likeCount + (addLike ? 1 : -1),
-              likedByMe: addLike,
+              likedByMe: addLike && userId === currentUser?.id,
+            }
+          : post,
+      ),
+    );
+  };
+
+  const addCommentToPost = (postId: string, comment: Comment) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: [comment, ...(post.comments || [])],
+            }
+          : post,
+      ),
+    );
+  };
+
+  const updateCommentInPost = (
+    postId: string,
+    commentId: string,
+    updatedComment: Comment,
+  ) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: post.comments?.map((comment) =>
+                comment.id === commentId ? updatedComment : comment,
+              ),
+            }
+          : post,
+      ),
+    );
+  };
+
+  const deleteCommentFromPost = (postId: string, commentId: string) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: post.comments?.filter(
+                (comment) => comment.id !== commentId,
+              ),
+            }
+          : post,
+      ),
+    );
+  };
+
+  const toggleLocalCommentLike = (
+    postId: string,
+    commentId: string,
+    addLike: boolean,
+    userId: string,
+  ) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: post.comments?.map((comment) =>
+                comment.id === commentId
+                  ? {
+                      ...comment,
+                      likeCount: comment.likeCount + (addLike ? 1 : -1),
+                      likedByMe: addLike && userId === currentUser?.id,
+                    }
+                  : comment,
+              ),
             }
           : post,
       ),
@@ -118,10 +245,6 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
         tags,
         loading,
         error,
-        createLocalPost,
-        updateLocalPost,
-        deleteLocalPost,
-        toggleLocalPostLike,
       }}
     >
       {loading ? (

@@ -7,10 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
+	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	// "github.com/gofiber/websocket/v2"
-	"context"
+	"github.com/gofiber/websocket/v2"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -32,70 +32,75 @@ func main() {
 	seeds.Seed(db)
 
 	app := fiber.New()
+	var clients = make(map[*websocket.Conn]bool)
 
-	app.Use(cors.New(cors.Config{
+	blogPost := app.Group("/blog_post")
+
+	blogPost.Use(cors.New(cors.Config{
 		AllowOrigins:     os.Getenv("ALLOWED_ORIGINS"),
 		AllowMethods:     "GET,POST,PUT,DELETE",
 		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
 		AllowCredentials: true,
 	}))
-	// app.Use("/ws", func(ctx *fiber.Ctx) error {
-	// 	return handlers.HandleWebSocket(ctx)
-	// })
-	// app.Get("/ws", websocket.New(handlers.WebSocketHandler))
-	app.Post("/auth/signIn", func(ctx *fiber.Ctx) error {
+	blogPost.Use("/ws", func(ctx *fiber.Ctx) error {
+		return handlers.HandleWebSocket(ctx)
+	})
+	blogPost.Get("/ws/", websocket.New(func(c *websocket.Conn) {
+		handlers.WebSocketHandler(c, clients)
+	}))
+	blogPost.Post("/auth/signIn", func(ctx *fiber.Ctx) error {
 		return handlers.HandleSignIn(ctx, db)
 	})
-	app.Post("/auth/signUp", func(ctx *fiber.Ctx) error {
+	blogPost.Post("/auth/signUp", func(ctx *fiber.Ctx) error {
 		return handlers.HandleSignUp(ctx, db)
 	})
-	app.Get("/auth/userInfo/:userId", func(ctx *fiber.Ctx) error {
+	blogPost.Get("/auth/userInfo/:userId", func(ctx *fiber.Ctx) error {
 		return handlers.HandleUserInfo(ctx, db)
 	})
-	app.Put("/auth/updateUserInfo", func(ctx *fiber.Ctx) error {
+	blogPost.Put("/auth/updateUserInfo", func(ctx *fiber.Ctx) error {
 		return handlers.HandleUpdateUserInfo(ctx, db, s3Client)
 	})
-	app.Put("/auth/updatePassword", func(ctx *fiber.Ctx) error {
+	blogPost.Put("/auth/updatePassword", func(ctx *fiber.Ctx) error {
 		return handlers.HandleUpdatePassword(ctx, db)
 	})
-	app.Delete("/auth/deleteUser", func(ctx *fiber.Ctx) error {
+	blogPost.Delete("/auth/deleteUser", func(ctx *fiber.Ctx) error {
 		return handlers.HandleDeleteUser(ctx, db, s3Client)
 	})
-	app.Post("auth/passwordForgotten", func(ctx *fiber.Ctx) error {
+	blogPost.Post("auth/passwordForgotten", func(ctx *fiber.Ctx) error {
 		return handlers.HandlePasswordForgotten(ctx, db)
 	})
-	app.Get("/tags", func(ctx *fiber.Ctx) error {
+	blogPost.Get("/tags", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetTags(ctx, db)
 	})
-	app.Get("/posts", func(ctx *fiber.Ctx) error {
+	blogPost.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
 	})
-	app.Get("/posts/:id", func(ctx *fiber.Ctx) error {
-		return handlers.HandleGetPost(ctx, db)
+	// blogPost.Get("/posts/:id", func(ctx *fiber.Ctx) error {
+	// return handlers.HandleGetPost(ctx, db)
+	// })
+	blogPost.Post("/posts/", func(ctx *fiber.Ctx) error {
+		return handlers.HandleAddPost(ctx, db, s3Client, clients)
 	})
-	app.Post("/posts/", func(ctx *fiber.Ctx) error {
-		return handlers.HandleAddPost(ctx, db, s3Client)
+	blogPost.Put("/posts/:id", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUpdatePost(ctx, db, s3Client, clients)
 	})
-	app.Put("/posts/:id", func(ctx *fiber.Ctx) error {
-		return handlers.HandleUpdatePost(ctx, db, s3Client)
+	blogPost.Delete("/posts/:id", func(ctx *fiber.Ctx) error {
+		return handlers.HandleDeletePost(ctx, db, s3Client, clients)
 	})
-	app.Delete("/posts/:id", func(ctx *fiber.Ctx) error {
-		return handlers.HandleDeletePost(ctx, db, s3Client)
+	blogPost.Post("/posts/:postId/toggleLike", func(ctx *fiber.Ctx) error {
+		return handlers.HandleToggleLikePost(ctx, db, clients)
 	})
-	app.Post("/posts/:postId/toggleLike", func(ctx *fiber.Ctx) error {
-		return handlers.HandleToggleLikePost(ctx, db)
+	blogPost.Post("/posts/:id/comments", func(ctx *fiber.Ctx) error {
+		return handlers.HandleAddComment(ctx, db, clients)
 	})
-	app.Post("/posts/:id/comments", func(ctx *fiber.Ctx) error {
-		return handlers.HandleAddComment(ctx, db)
+	blogPost.Put("/posts/:postId/comments/:commentId", func(ctx *fiber.Ctx) error {
+		return handlers.HandleUpdateComment(ctx, db, clients)
 	})
-	app.Put("/posts/:postId/comments/:commentId", func(ctx *fiber.Ctx) error {
-		return handlers.HandleUpdateComment(ctx, db)
+	blogPost.Delete("/posts/:postId/comments/:commentId", func(ctx *fiber.Ctx) error {
+		return handlers.HandleDeleteComment(ctx, db, clients)
 	})
-	app.Delete("/posts/:postId/comments/:commentId", func(ctx *fiber.Ctx) error {
-		return handlers.HandleDeleteComment(ctx, db)
-	})
-	app.Post("/posts/:postId/comments/:commentId/toggleLike", func(ctx *fiber.Ctx) error {
-		return handlers.HandleToggleCommentLike(ctx, db)
+	blogPost.Post("/posts/:postId/comments/:commentId/toggleLike", func(ctx *fiber.Ctx) error {
+		return handlers.HandleToggleCommentLike(ctx, db, clients)
 	})
 
 	port := os.Getenv("PORT")

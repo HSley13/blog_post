@@ -6,13 +6,11 @@ import { createComment } from "../services/comments";
 import { Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
-import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { deletePost, togglePostLike } from "../services/posts";
 import { PostDetails } from "./PostDetails";
 
 export const Post = () => {
-  const { createLocalComment, post, rootComments } = useSinglePostContext();
-  const { deleteLocalPost, toggleLocalPostLike } = useAllPostsContext();
+  const { post, rootComments } = useSinglePostContext();
   const currentUser = useUser();
   const navigate = useNavigate();
 
@@ -24,23 +22,20 @@ export const Post = () => {
 
   const onDeletePost = async () => {
     await deletePostFn.execute({ id: post?.id.toString() || "" });
-    deleteLocalPost(post?.id || "");
-    navigate("/");
+    navigate("/posts");
   };
 
   const onTogglePostLike = async () => {
-    const togglePost = await togglePostLikeFn.execute({
+    await togglePostLikeFn.execute({
       id: post?.id.toString() || "",
     });
-    toggleLocalPostLike(togglePost.id, togglePost.addLike);
   };
 
   const onCommentSubmit = async (message: string) => {
-    const newComment = await createCommentFunc.execute({
+    await createCommentFunc.execute({
       postId: post?.id || "",
       message,
     });
-    createLocalComment(newComment);
   };
 
   return (

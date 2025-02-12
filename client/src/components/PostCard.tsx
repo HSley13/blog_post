@@ -3,7 +3,6 @@ import { Card, Badge, Col, Stack, Row } from "react-bootstrap";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import styles from "../modules/PostCard.module.css";
 import { IconButton } from "./IconButton";
-import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { togglePostLike } from "../services/posts";
 import { useAsyncFn } from "../hooks/useAsync";
 
@@ -26,14 +25,12 @@ export const PostCard = ({
   updatedAt,
   tags,
 }: PostCardProps) => {
-  const { toggleLocalPostLike } = useAllPostsContext();
   const togglePostLikeFn = useAsyncFn(togglePostLike);
 
   const onTogglePostLike = async () => {
-    const togglePost = await togglePostLikeFn.execute({
+    await togglePostLikeFn.execute({
       id: id || "",
     });
-    toggleLocalPostLike(togglePost.id, togglePost.addLike);
   };
 
   return (

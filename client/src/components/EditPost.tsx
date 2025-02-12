@@ -9,7 +9,7 @@ import { Container, Spinner, Alert } from "react-bootstrap";
 export const EditPost = () => {
   const { id } = useParams();
   const { loading, error, post } = useSinglePostContext();
-  const { updateLocalPost, tags } = useAllPostsContext();
+  const { tags } = useAllPostsContext();
   const updatePostFn = useAsyncFn(updatePost);
 
   const onPostSubmit = async (
@@ -19,21 +19,13 @@ export const EditPost = () => {
     image: File,
     tags?: string[],
   ) => {
-    const updatedPost = await updatePostFn.execute({
+    await updatePostFn.execute({
       id: id,
       title,
       body,
       file: image,
       tags,
     });
-    updateLocalPost(
-      updatedPost.id,
-      updatedPost.title,
-      updatedPost.body,
-      updatedPost.updatedAt,
-      updatedPost.imageUrl || "",
-      updatedPost.tags,
-    );
   };
 
   if (loading) {

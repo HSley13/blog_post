@@ -6,10 +6,9 @@ import React, {
   useMemo,
   useContext,
 } from "react";
-import { useAsync } from "../hooks/useAsync";
-import { getPost } from "../services/posts";
 import { Container, Spinner } from "react-bootstrap";
 import { Comment, Post } from "../types/types";
+import { useAllPostsContext } from "../contexts/AllPostsContext";
 
 type SinglePostContextValue = {
   post: Post | undefined;
@@ -17,10 +16,6 @@ type SinglePostContextValue = {
   error: Error | undefined;
   getReplies: (parentId: string | null) => Comment[] | undefined;
   rootComments: Comment[] | undefined;
-  createLocalComment: (comment: Comment) => void;
-  updateLocalComment: (id: string, message: string) => void;
-  deleteLocalComment: (id: string) => void;
-  toggleLocalCommentLike: (id: string, addLike: boolean) => void;
 };
 
 const Context = createContext<SinglePostContextValue>({
@@ -29,10 +24,6 @@ const Context = createContext<SinglePostContextValue>({
   error: undefined,
   getReplies: () => [],
   rootComments: [],
-  createLocalComment: () => {},
-  updateLocalComment: () => {},
-  deleteLocalComment: () => {},
-  toggleLocalCommentLike: () => {},
 });
 
 export const useSinglePostContext = () => useContext(Context);
@@ -45,60 +36,30 @@ export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
   children,
 }) => {
   const { id } = useParams<{ id: string }>();
-  const { loading, error, value: post } = useAsync(() => getPost(id), [id]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const { loading, error, posts } = useAllPostsContext();
+  const [post, setPost] = useState<Post | undefined>(undefined);
 
   useEffect(() => {
-    if (post?.comments == null) return;
-    setComments([...post.comments]);
-  }, [post?.comments]);
+    const foundPost = posts.find((post) => post.id === id);
+    setPost(foundPost);
+  }, [id, posts]);
 
   const commentsByParentId = useMemo(() => {
     const group: { [key: string | null]: Comment[] } = {};
 
-    comments.forEach((comment) => {
-      const parentId = comment.parentId || null;
-      group[parentId] = group[parentId] || [];
-      group[parentId].push(comment);
-    });
+    if (post?.comments) {
+      post.comments.forEach((comment) => {
+        const parentId = comment.parentId || null;
+        group[parentId] = group[parentId] || [];
+        group[parentId].push(comment);
+      });
+    }
 
     return group;
-  }, [comments]);
+  }, [post?.comments, post]);
 
   const getReplies = (parentId: string | null) => {
     return commentsByParentId[parentId];
-  };
-
-  const createLocalComment = (comment: Comment) => {
-    setComments((prevComments) => [comment, ...prevComments]);
-  };
-
-  const updateLocalComment = (id: string, message: string) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === id ? { ...comment, message } : comment,
-      ),
-    );
-  };
-
-  const deleteLocalComment = (id: string) => {
-    setComments((prevComments) =>
-      prevComments.filter((comment) => comment.id !== id),
-    );
-  };
-
-  const toggleLocalCommentLike = (id: string, addLike: boolean) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === id
-          ? {
-              ...comment,
-              likeCount: comment.likeCount + (addLike ? 1 : -1),
-              likedByMe: addLike,
-            }
-          : comment,
-      ),
-    );
   };
 
   return (
@@ -109,10 +70,6 @@ export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
         rootComments: commentsByParentId[null],
         loading,
         error,
-        createLocalComment,
-        updateLocalComment,
-        deleteLocalComment,
-        toggleLocalCommentLike,
       }}
     >
       {loading ? (

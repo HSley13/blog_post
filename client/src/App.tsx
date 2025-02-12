@@ -15,7 +15,7 @@ import { Profile } from "./components/Profile";
 import { PasswordRecoveryForm } from "./components/PasswordRecoveryForm";
 
 export const App = () => {
-  const { tags, createLocalPost } = useAllPostsContext();
+  const { tags } = useAllPostsContext();
   const createPostFunc = useAsyncFn(createPost);
 
   const onPostSubmit = async (
@@ -25,14 +25,13 @@ export const App = () => {
     image: File,
     tags?: string[],
   ) => {
-    const newPost = await createPostFunc.execute({
+    await createPostFunc.execute({
       userId: userId,
       title: title,
       body: body,
       file: image,
       tags: tags,
     });
-    createLocalPost(newPost);
   };
 
   return (
@@ -51,7 +50,7 @@ export const App = () => {
           }
         />
         <Route
-          path="posts/new"
+          path="/posts/new"
           element={
             <div className="m-3">
               <PostForm

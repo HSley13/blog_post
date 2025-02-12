@@ -82,23 +82,32 @@ export const PostList = () => {
       </Row>
       <h1 className="text-center mb-4">Most Recent Posts</h1>
       <Row xs={1} md={2} xl={2} className="g-3">
-        {filteredPosts?.map((post: Post) => (
-          <Col key={post.id}>
-            <PostCard
-              id={post.id.toString()}
-              title={post.title}
-              likeCount={post.likeCount}
-              likedByMe={post.likedByMe}
-              tags={post?.tags?.map((tag: Tag) => tag?.name)}
-              createdAt={dateFormatter.format(
-                Date.parse(post.createdAt || post.created_at),
-              )}
-              updatedAt={dateFormatter.format(
-                Date.parse(post.updatedAt || post.updated_at),
-              )}
-            />
-          </Col>
-        ))}
+        {filteredPosts && filteredPosts.length > 0 ? (
+          filteredPosts.map((post: Post) => {
+            if (!post.id) {
+              return null;
+            }
+            return (
+              <Col key={post.id}>
+                <PostCard
+                  id={post.id.toString()}
+                  title={post.title}
+                  likeCount={post.likeCount}
+                  likedByMe={post.likedByMe}
+                  tags={post?.tags?.map((tag: Tag) => tag?.name)}
+                  createdAt={dateFormatter.format(
+                    Date.parse(post.createdAt || post.created_at),
+                  )}
+                  updatedAt={dateFormatter.format(
+                    Date.parse(post.updatedAt || post.updated_at),
+                  )}
+                />
+              </Col>
+            );
+          })
+        ) : (
+          <p>No posts found.</p>
+        )}
       </Row>
     </Container>
   );

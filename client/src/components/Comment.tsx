@@ -42,14 +42,7 @@ export const Comment = ({
   likedByMe,
   user,
 }: CommentProps) => {
-  const {
-    createLocalComment,
-    updateLocalComment,
-    deleteLocalComment,
-    getReplies,
-    toggleLocalCommentLike,
-    post,
-  } = useSinglePostContext();
+  const { getReplies, post } = useSinglePostContext();
   const createCommentFunc = useAsyncFn(createComment);
   const updateCommentFunc = useAsyncFn(updateComment);
   const deleteCommentFunc = useAsyncFn(deleteComment);
@@ -62,23 +55,21 @@ export const Comment = ({
   const [showModal, setShowModal] = useState(false);
 
   const onCommentReply = async (message: string) => {
-    const newComment = await createCommentFunc.execute({
+    await createCommentFunc.execute({
       postId: post?.id || "",
       message,
       parentId: id,
     });
     setIsReplying(false);
-    createLocalComment(newComment);
   };
 
   const onCommentUpdate = async (message: string) => {
-    const updatedComment = await updateCommentFunc.execute({
+    await updateCommentFunc.execute({
       postId: post?.id || "",
       id,
       message,
     });
     setIsEditing(false);
-    updateLocalComment(updatedComment.id, updatedComment.message);
   };
 
   const handleConfirmDeleteComment = async () => {
@@ -93,11 +84,10 @@ export const Comment = ({
 
     if (!confirm) return;
 
-    const deletedComment = await deleteCommentFunc.execute({
+    await deleteCommentFunc.execute({
       postId: post?.id || "",
       id,
     });
-    deleteLocalComment(deletedComment.id);
   };
 
   const handleCancelDeleteComment = () => {
@@ -105,11 +95,10 @@ export const Comment = ({
   };
 
   const onToggleCommentLike = async () => {
-    const toggleComment = await toggleLikeFunc.execute({
+    await toggleLikeFunc.execute({
       postId: post?.id || "",
       id,
     });
-    toggleLocalCommentLike(toggleComment.id, toggleComment.addLike);
   };
 
   return (
