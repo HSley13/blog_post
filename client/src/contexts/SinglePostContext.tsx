@@ -1,11 +1,5 @@
 import { useParams } from "react-router-dom";
-import React, {
-  createContext,
-  useEffect,
-  useState,
-  useMemo,
-  useContext,
-} from "react";
+import React, { createContext, useMemo, useContext } from "react";
 import { Container, Spinner } from "react-bootstrap";
 import { Comment, Post } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
@@ -31,17 +25,12 @@ export const useSinglePostContext = () => useContext(Context);
 type SinglePostProviderProps = {
   children: React.ReactNode;
 };
-
-export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
-  children,
-}) => {
+export const SinglePostProvider = ({ children }: SinglePostProviderProps) => {
   const { id } = useParams<{ id: string }>();
   const { loading, error, posts } = useAllPostsContext();
-  const [post, setPost] = useState<Post | undefined>(undefined);
 
-  useEffect(() => {
-    const foundPost = posts.find((post) => post.id === id);
-    setPost(foundPost);
+  const post = useMemo(() => {
+    return posts.find((post) => post.id === id);
   }, [id, posts]);
 
   const commentsByParentId = useMemo(() => {
@@ -56,7 +45,7 @@ export const SinglePostProvider: React.FC<SinglePostProviderProps> = ({
     }
 
     return group;
-  }, [post?.comments, post]);
+  }, [post?.comments]);
 
   const getReplies = (parentId: string | null) => {
     return commentsByParentId[parentId];

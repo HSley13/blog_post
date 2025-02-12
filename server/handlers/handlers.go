@@ -317,6 +317,7 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 				"message":   comment.Message,
 				"parentId":  comment.ParentID,
 				"createdAt": comment.CreatedAt,
+				"updatedAt": comment.UpdatedAt,
 				"user": fiber.Map{
 					"id":   comment.User.ID,
 					"name": comment.User.FirstName,
@@ -357,80 +358,6 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 
 	return ctx.JSON(result)
 }
-
-// func HandleGetPost(ctx *fiber.Ctx, db *gorm.DB) error {
-// 	postID := ctx.Params("id")
-// 	post := models.Post{}
-//
-// 	if err := db.Preload("Comments", func(db *gorm.DB) *gorm.DB {
-// 		return db.Order("created_at DESC").Preload("User").Preload("Likes")
-// 	}).First(&post, "id = ?", postID).Error; err != nil {
-// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
-// 	}
-//
-// 	if err := db.Preload("Likes").First(&post, "id = ?", postID).Error; err != nil {
-// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
-// 	}
-//
-// 	if err := db.Preload("Tags").First(&post, "id = ?", postID).Error; err != nil {
-// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Posts not found"})
-// 	}
-//
-// 	userID := ctx.Cookies("userId")
-// 	userCommentLikes := []models.CommentLike{}
-// 	if err := db.Where("user_id = ?", userID).Find(&userCommentLikes).Error; err != nil {
-// 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve user comment likes"})
-// 	}
-//
-// 	comments := []fiber.Map{}
-// 	for _, comment := range post.Comments {
-// 		likedByMe := false
-// 		for _, like := range userCommentLikes {
-// 			if like.CommentID == comment.ID {
-// 				likedByMe = true
-// 				break
-// 			}
-// 		}
-// 		comments = append(comments, fiber.Map{
-// 			"id":        comment.ID,
-// 			"message":   comment.Message,
-// 			"parentId":  comment.ParentID,
-// 			"createdAt": comment.CreatedAt,
-// 			"user": fiber.Map{
-// 				"id":   comment.User.ID,
-// 				"name": comment.User.FirstName,
-// 			},
-// 			"likeCount": len(comment.Likes),
-// 			"likedByMe": likedByMe,
-// 		})
-// 	}
-//
-// 	userPostLikes := []models.PostLike{}
-// 	if err := db.Where("user_id = ?", userID).Find(&userPostLikes).Error; err != nil {
-// 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to retrieve user post likes"})
-// 	}
-// 	likedByMe := false
-// 	for _, like := range userPostLikes {
-// 		if like.PostID == post.ID {
-// 			likedByMe = true
-// 			break
-// 		}
-// 	}
-//
-// 	return ctx.JSON(fiber.Map{
-// 		"id":        post.ID,
-// 		"userId":    post.UserID,
-// 		"title":     post.Title,
-// 		"body":      post.Body,
-// 		"imageUrl":  post.Image,
-// 		"likeCount": len(post.Likes),
-// 		"likedByMe": likedByMe,
-// 		"createdAt": post.CreatedAt,
-// 		"updatedAt": post.UpdatedAt,
-// 		"comments":  comments,
-// 		"tags":      post.Tags,
-// 	})
-// }
 
 func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client, clients map[*websocket.Conn]bool) error {
 	var body struct {
@@ -605,6 +532,7 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client, clients 
 			"id":        post.ID,
 			"title":     post.Title,
 			"body":      post.Body,
+			"createdAt": post.CreatedAt,
 			"updatedAt": post.UpdatedAt,
 			"imageUrl":  post.Image,
 			"tags":      post.Tags,
@@ -667,7 +595,7 @@ func HandleToggleLikePost(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Co
 				"id":      postID,
 				"message": "like Removed",
 				"addLike": false,
-				"userId":  like.UserID,
+				"userId":  userID,
 			}})
 
 		BroadcastMessage(postUnliked, clients)
@@ -684,7 +612,7 @@ func HandleToggleLikePost(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Co
 				"id":      postID,
 				"message": "Like added",
 				"addLike": true,
-				"userId":  like.UserID,
+				"userId":  userID,
 			}})
 
 		BroadcastMessage(postLiked, clients)
@@ -733,6 +661,7 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Conn]b
 				"id":        comment.ID,
 				"message":   comment.Message,
 				"parentId":  comment.ParentID,
+				"updatedAt": comment.UpdatedAt,
 				"createdAt": comment.CreatedAt,
 				"user": fiber.Map{
 					"id":   comment.User.ID,
@@ -781,6 +710,7 @@ func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Con
 			"commentId": comment.ID,
 			"message":   comment.Message,
 			"updatedAt": comment.UpdatedAt,
+			"createdAt": comment.CreatedAt,
 		},
 	})
 
@@ -825,6 +755,9 @@ func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
 	}
 
+	var postID string
+	db.Model(&models.Comment{}).Where("id = ?", commentID).Pluck("post_id", &postID)
+
 	like := models.CommentLike{}
 	if err := db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like).Error; err == nil {
 		if err := db.Delete(&like).Error; err != nil {
@@ -834,14 +767,14 @@ func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket
 		commentUnliked := fiber.Map{
 			"type": "COMMENT_LIKED",
 			"data": fiber.Map{
-				"postId":    like.Comment.PostID,
+				"postId":    postID,
 				"commentId": commentID,
 				"addLike":   false,
-				"userId":    like.UserID,
+				"userId":    userID,
 			},
 		}
-		BroadcastMessage(commentUnliked, clients)
 
+		BroadcastMessage(commentUnliked, clients)
 		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Comment Unliked"})
 	} else {
 		newLike := models.CommentLike{UserID: userID, CommentID: commentID}
@@ -852,14 +785,14 @@ func HandleToggleCommentLike(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket
 		commentLiked := fiber.Map{
 			"type": "COMMENT_LIKED",
 			"data": fiber.Map{
-				"postId":    newLike.Comment.PostID,
+				"postId":    postID,
 				"commentId": commentID,
 				"addLike":   true,
-				"userId":    newLike.UserID,
+				"userId":    userID,
 			},
 		}
-		BroadcastMessage(commentLiked, clients)
 
+		BroadcastMessage(commentLiked, clients)
 		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Comment Liked"})
 	}
 }

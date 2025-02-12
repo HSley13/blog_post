@@ -15,7 +15,6 @@ type Comment = {
 type CommentListProps = {
   comments: Comment[];
 };
-
 export const CommentList = ({ comments }: CommentListProps) => {
   return comments.map((comment) => (
     <div key={comment.id}>

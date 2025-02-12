@@ -76,15 +76,23 @@ export const PostDetails = ({
         {post?.updatedAt !== post?.createdAt ? (
           <>
             <small className="text-muted ms-1 fs-8">
-              {/* created: {dateFormatter.format(Date.parse(post?.createdAt))} */}
+              created:{" "}
+              {dateFormatter.format(
+                Date.parse(post?.createdAt || post?.created_at),
+              )}
             </small>
             <small className="text-muted ms-1 fs-8">
-              {/* last updated: {dateFormatter.format(Date.parse(post?.updatedAt))} */}
+              last updated:{" "}
+              {dateFormatter.format(
+                Date.parse(post?.updatedAt || post?.updated_at),
+              )}
             </small>
           </>
         ) : (
           <small className="text-muted fs-8">
-            {/* {dateFormatter.format(Date.parse(post?.createdAt))} */}
+            {dateFormatter.format(
+              Date.parse(post?.createdAt || post?.created_at),
+            )}
           </small>
         )}
       </Row>

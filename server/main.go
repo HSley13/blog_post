@@ -75,9 +75,6 @@ func main() {
 	blogPost.Get("/posts", func(ctx *fiber.Ctx) error {
 		return handlers.HandleGetPosts(ctx, db)
 	})
-	// blogPost.Get("/posts/:id", func(ctx *fiber.Ctx) error {
-	// return handlers.HandleGetPost(ctx, db)
-	// })
 	blogPost.Post("/posts/", func(ctx *fiber.Ctx) error {
 		return handlers.HandleAddPost(ctx, db, s3Client, clients)
 	})

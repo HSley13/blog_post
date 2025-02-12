@@ -29,7 +29,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     const ws = new WebSocket(socketUrl);
 
     ws.onopen = () => {
-      console.log("WebSocket connection established");
       setIsConnected(true);
       setSocket(ws);
     };
@@ -40,7 +39,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     };
 
     ws.onclose = () => {
-      console.log("WebSocket connection closed");
       setIsConnected(false);
       setSocket(null);
     };

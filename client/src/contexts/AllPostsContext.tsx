@@ -25,10 +25,7 @@ export const useAllPostsContext = () => useContext(Context);
 type AllPostsProviderProps = {
   children: React.ReactNode;
 };
-
-export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
-  children,
-}) => {
+export const AllPostsProvider = ({ children }: AllPostsProviderProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const currentUser = useUser();
@@ -61,7 +58,11 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
             break;
 
           case "POST_LIKED":
-            toggleLocalPostLike(message.data.id, message.data.addLike);
+            toggleLocalPostLike(
+              message.data.id,
+              message.data.addLike,
+              message.data.userId,
+            );
             break;
 
           case "COMMENT_ADDED":
@@ -86,6 +87,7 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
               message.data.postId,
               message.data.commentId,
               message.data.addLike,
+              message.data.userId,
             );
             break;
 
@@ -181,7 +183,8 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
   const updateCommentInPost = (
     postId: string,
     commentId: string,
-    updatedComment: Comment,
+    message: string,
+    updatedAt: string,
   ) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
@@ -189,7 +192,9 @@ export const AllPostsProvider: React.FC<AllPostsProviderProps> = ({
           ? {
               ...post,
               comments: post.comments?.map((comment) =>
-                comment.id === commentId ? updatedComment : comment,
+                comment.id === commentId
+                  ? { ...comment, message, updatedAt }
+                  : comment,
               ),
             }
           : post,

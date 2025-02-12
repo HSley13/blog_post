@@ -38,6 +38,8 @@ export const Post = () => {
     });
   };
 
+  if (!post) return null;
+
   return (
     <Container className="my-4">
       {post?.userId === currentUser?.id ? (
