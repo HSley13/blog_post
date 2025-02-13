@@ -1,6 +1,6 @@
 import { Row, Col, Container } from "react-bootstrap";
 import { PostCard } from "./PostCard";
-import { dateFormatter } from "./Comment";
+import { dateFormatter } from "../utils/utils";
 import { Post, Tag } from "../types/types";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { Button, Form } from "react-bootstrap";
@@ -17,18 +17,25 @@ export const PostList = () => {
   const currentUser = useUser();
 
   const filteredPosts = useMemo(() => {
-    return posts?.filter((post: Post) => {
-      const matchesTitle =
-        title === "" || post.title.toLowerCase().includes(title.toLowerCase());
-      const matchesTags =
-        !selectedTags.length ||
-        (post.tags &&
-          selectedTags.every((tag) =>
-            post?.tags?.some((postTag) => postTag.name === tag),
-          ));
+    return posts
+      ?.filter((post: Post) => {
+        const matchesTitle =
+          title === "" ||
+          post.title.toLowerCase().includes(title.toLowerCase());
+        const matchesTags =
+          !selectedTags.length ||
+          (post.tags &&
+            selectedTags.every((tag) =>
+              post?.tags?.some((postTag) => postTag.name === tag),
+            ));
 
-      return matchesTitle && matchesTags;
-    });
+        return matchesTitle && matchesTags;
+      })
+      .sort((a: Post, b: Post) => {
+        const dateA = Date.parse(a.updatedAt || a.createdAt);
+        const dateB = Date.parse(b.updatedAt || b.createdAt);
+        return dateB - dateA;
+      });
   }, [posts, title, selectedTags]);
 
   return (

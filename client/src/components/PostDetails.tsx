@@ -2,7 +2,8 @@ import { Row, Col, Badge } from "react-bootstrap";
 import { FaHeart, FaRegHeart, FaEdit, FaTrash } from "react-icons/fa";
 import { IconButton } from "./IconButton";
 import { Post, Tag } from "../types/types";
-import { dateFormatter } from "./Comment";
+import { Link } from "react-router-dom";
+import { dateFormatter } from "../utils/utils";
 
 type PostDetailsProps = {
   post: Post;
@@ -72,28 +73,37 @@ export const PostDetails = ({
           </Badge>
         ))}
       </Col>
-      <Row className="text-end">
+
+      <Row className="text-end mb-3">
         {post?.updatedAt !== post?.createdAt ? (
           <>
-            <small className="text-muted ms-1 fs-8">
+            <span className="text-muted" style={{ fontSize: "0.8rem" }}>
               created:{" "}
               {dateFormatter.format(
                 Date.parse(post?.createdAt || post?.created_at),
               )}
-            </small>
-            <small className="text-muted ms-1 fs-8">
-              last updated:{" "}
+            </span>
+            <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+              edited:{" "}
               {dateFormatter.format(
                 Date.parse(post?.updatedAt || post?.updated_at),
               )}
-            </small>
+            </span>
           </>
         ) : (
-          <small className="text-muted fs-8">
+          <span className="text-muted" style={{ fontSize: "0.8rem" }}>
             {dateFormatter.format(
               Date.parse(post?.createdAt || post?.created_at),
             )}
-          </small>
+          </span>
+        )}
+        {!onEdit && (
+          <Link
+            to={`/profile/${post?.user?.id}`}
+            className="text-decoration-none mt-1"
+          >
+            <span className="fw-bold">Author: {post?.user.name}</span>
+          </Link>
         )}
       </Row>
     </Row>

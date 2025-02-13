@@ -66,15 +66,17 @@ export const PostCard = ({
                 ))}
               </Col>
               {updatedAt === createdAt ? (
-                <small className="text-muted">{updatedAt}</small>
+                <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+                  {createdAt}
+                </span>
               ) : (
                 <Row className="text-end">
-                  <small className="text-muted ms-1 fs-8">
+                  <span className="text-muted" style={{ fontSize: "0.8rem" }}>
                     created: {createdAt}
-                  </small>
-                  <small className="text-muted ms-1 fs-8">
-                    last updated: {updatedAt}
-                  </small>
+                  </span>
+                  <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+                    edited: {updatedAt}
+                  </span>
                 </Row>
               )}
             </Col>

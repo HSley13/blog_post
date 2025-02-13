@@ -1,13 +1,21 @@
 import { IconButton } from "./IconButton";
-import { FaReply, FaHeart, FaRegHeart, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  FaReply,
+  FaHeart,
+  FaRegHeart,
+  FaEdit,
+  FaTrash,
+  FaTimes,
+} from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Button, Card } from "react-bootstrap";
+import { Button, Card, Row } from "react-bootstrap";
 import { useSinglePostContext } from "../contexts/SinglePostContext";
 import { CommentList } from "./CommentList";
 import { useState } from "react";
 import { CommentForm } from "./CommentForm";
 import { useAsyncFn } from "../hooks/useAsync";
 import { Link } from "react-router-dom";
+import { dateFormatter } from "../utils/utils";
 import {
   createComment,
   updateComment,
@@ -17,7 +25,7 @@ import {
 import { useUser } from "../hooks/useUser";
 import { ConfirmationModal } from "./ConfirmationModal";
 
-type CommentProps = {
+type CommentCardProps = {
   id: string;
   message: string;
   createdAt: string;
@@ -28,20 +36,15 @@ type CommentProps = {
     name: string;
   };
 };
-
-export const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
-export const Comment = ({
+export const CommentCard = ({
   id,
   message,
   createdAt,
+  updatedAt,
   likeCount,
   likedByMe,
   user,
-}: CommentProps) => {
+}: CommentCardProps) => {
   const { getReplies, post } = useSinglePostContext();
   const createCommentFunc = useAsyncFn(createComment);
   const updateCommentFunc = useAsyncFn(updateComment);
@@ -116,9 +119,20 @@ export const Comment = ({
             <Link to={`/profile/${user?.id}`} className="text-decoration-none">
               <span className="fw-bold">{user.name}</span>
             </Link>
-            <span className="text-muted">
-              {dateFormatter.format(Date.parse(createdAt))}
-            </span>
+            {createdAt === updatedAt ? (
+              <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+                {dateFormatter.format(Date.parse(createdAt))}
+              </span>
+            ) : (
+              <Row className="text-end">
+                <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+                  created: {dateFormatter.format(Date.parse(createdAt))}
+                </span>
+                <span className="text-muted" style={{ fontSize: "0.8rem" }}>
+                  edited: {dateFormatter.format(Date.parse(updatedAt))}
+                </span>
+              </Row>
+            )}
           </div>
 
           {isEditing ? (
@@ -146,7 +160,7 @@ export const Comment = ({
             </IconButton>
             <IconButton
               aria-label={isReplying ? "Cancel Reply" : "Reply"}
-              Icon={FaReply}
+              Icon={isReplying ? FaTimes : FaReply}
               isActive={isReplying}
               onClick={() => {
                 setIsReplying(!isReplying);
@@ -158,7 +172,7 @@ export const Comment = ({
               <>
                 <IconButton
                   aria-label={isEditing ? "Cancel Edit" : "Edit"}
-                  Icon={FaEdit}
+                  Icon={isEditing ? FaTimes : FaEdit}
                   isActive={isEditing}
                   onClick={() => {
                     setIsEditing(!isEditing);

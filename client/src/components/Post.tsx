@@ -42,7 +42,7 @@ export const Post = () => {
 
   return (
     <Container className="my-4">
-      {post?.userId === currentUser?.id ? (
+      {post?.user?.id === currentUser?.id ? (
         <PostDetails
           post={post}
           onTogglePostLike={onTogglePostLike}

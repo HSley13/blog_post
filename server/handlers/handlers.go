@@ -339,9 +339,15 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 			}
 		}
 
+		var userName string
+		db.Model(&models.User{}).Where("id = ?", post.UserID).Pluck("first_name", &userName)
+
 		newPost := fiber.Map{
-			"id":        post.ID,
-			"userId":    post.UserID,
+			"id": post.ID,
+			"user": fiber.Map{
+				"id":   post.UserID,
+				"name": userName,
+			},
 			"title":     post.Title,
 			"body":      post.Body,
 			"imageUrl":  post.Image,
@@ -532,7 +538,6 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client, clients 
 			"id":        post.ID,
 			"title":     post.Title,
 			"body":      post.Body,
-			"createdAt": post.CreatedAt,
 			"updatedAt": post.UpdatedAt,
 			"imageUrl":  post.Image,
 			"tags":      post.Tags,
@@ -710,7 +715,6 @@ func HandleUpdateComment(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Con
 			"commentId": comment.ID,
 			"message":   comment.Message,
 			"updatedAt": comment.UpdatedAt,
-			"createdAt": comment.CreatedAt,
 		},
 	})
 

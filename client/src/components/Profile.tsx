@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { useAllPostsContext } from "../contexts/AllPostsContext";
 import { Post, Tag } from "../types/types";
 import { PostCard } from "./PostCard";
-import { dateFormatter } from "./Comment";
+import { dateFormatter } from "../utils/utils";
 import { useAsync, useAsyncFn } from "../hooks/useAsync";
 import {
   getUserInfo,
@@ -29,7 +29,7 @@ export const Profile = () => {
   }, [id]);
 
   const myPosts = useMemo(() => {
-    return posts?.filter((post: Post) => post.userId === id);
+    return posts?.filter((post: Post) => post.user.id === id);
   }, [posts, id]);
 
   const handleDeleteUser = async () => {

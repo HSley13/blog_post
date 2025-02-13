@@ -1,28 +1,24 @@
-import { Comment } from "./Comment";
-
-type Comment = {
-  id: string;
-  message: string;
-  createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
-  user: {
-    id: string;
-    name: string;
-  };
-};
+import { CommentCard } from "./CommentCard";
+import { Comment } from "../types/types";
 
 type CommentListProps = {
   comments: Comment[];
 };
 export const CommentList = ({ comments }: CommentListProps) => {
-  return comments.map((comment) => (
+  const sortedComments = comments.slice().sort((a, b) => {
+    const dateA = Date.parse(a.updatedAt || a.createdAt);
+    const dateB = Date.parse(b.updatedAt || b.createdAt);
+    return dateB - dateA;
+  });
+
+  return sortedComments.map((comment) => (
     <div key={comment.id}>
-      <Comment
+      <CommentCard
         id={comment.id}
         message={comment.message}
         user={comment.user}
         createdAt={comment.createdAt}
+        updatedAt={comment.updatedAt}
         likeCount={comment.likeCount}
         likedByMe={comment.likedByMe}
       />

@@ -13,13 +13,14 @@ export type Comment = {
 
 export type Post = {
   id: string;
-  title: string;
   body: string;
-  userId: string;
+  user: {
+    id: string;
+    name: string;
+  };
+  title: string;
   createdAt: string;
-  created_at: string;
   updatedAt: string;
-  updated_at: string;
   imageUrl?: string;
   tags?: Tag[];
   comments: Comment[];

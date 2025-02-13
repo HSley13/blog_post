@@ -29,7 +29,31 @@ export const AllPostsProvider = ({ children }: AllPostsProviderProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const currentUser = useUser();
+  const {
+    loading: loadingPosts,
+    error: errorPosts,
+    value: allPosts,
+  } = useAsync(getPosts);
+  const {
+    loading: loadingTags,
+    error: errorTags,
+    value: allTags,
+  } = useAsync(getTags);
 
+  const loading = loadingPosts || loadingTags;
+  const error = errorPosts || errorTags;
+
+  useEffect(() => {
+    if (allTags) {
+      setTags(allTags);
+    }
+  }, [allTags]);
+
+  useEffect(() => {
+    if (allPosts) {
+      setPosts(allPosts);
+    }
+  }, [allPosts]);
   const { socket, isConnected } = useWebSocketContext();
 
   useEffect(() => {
@@ -97,32 +121,6 @@ export const AllPostsProvider = ({ children }: AllPostsProviderProps) => {
       };
     }
   }, [socket, isConnected]);
-
-  const {
-    loading: loadingPosts,
-    error: errorPosts,
-    value: allPosts,
-  } = useAsync(getPosts);
-  const {
-    loading: loadingTags,
-    error: errorTags,
-    value: allTags,
-  } = useAsync(getTags);
-
-  const loading = loadingPosts || loadingTags;
-  const error = errorPosts || errorTags;
-
-  useEffect(() => {
-    if (allTags) {
-      setTags(allTags);
-    }
-  }, [allTags]);
-
-  useEffect(() => {
-    if (allPosts) {
-      setPosts(allPosts);
-    }
-  }, [allPosts]);
 
   const createLocalPost = (post: Post) => {
     setPosts((prevPosts) => [post, ...prevPosts]);
