@@ -32,7 +32,7 @@ func main() {
 	blogPost := app.Group("/blog_post")
 
 	blogPost.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://hsley13.github.io",
+		AllowOrigins:     os.Getenv("ALLOWED_ORIGINS"),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
 		AllowCredentials: true,

@@ -13,6 +13,7 @@ import { EditPost } from "./components/EditPost";
 import { AuthForm } from "./components/AuthForm";
 import { Profile } from "./components/Profile";
 import { PasswordRecoveryForm } from "./components/PasswordRecoveryForm";
+import { AllPostsProvider } from "./contexts/AllPostsContext";
 
 export const App = () => {
   const { tags } = useAllPostsContext();
@@ -39,41 +40,63 @@ export const App = () => {
       <Routes>
         <Route path="/" element={<AuthForm />} />
         <Route path="/password-recovery" element={<PasswordRecoveryForm />} />
-        <Route path="/profile/:id" element={<Profile />} />
-        <Route path="/posts" element={<PostList />} />
+
+        <Route
+          path="/profile/:id"
+          element={
+            <AllPostsProvider>
+              <Profile />
+            </AllPostsProvider>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <AllPostsProvider>
+              <PostList />
+            </AllPostsProvider>
+          }
+        />
         <Route
           path="/posts/:id"
           element={
-            <SinglePostProvider>
-              <Post />
-            </SinglePostProvider>
+            <AllPostsProvider>
+              <SinglePostProvider>
+                <Post />
+              </SinglePostProvider>
+            </AllPostsProvider>
           }
         />
         <Route
           path="/posts/new"
           element={
-            <div className="m-3">
-              <PostForm
-                availableTags={tags?.map((tag: Tag) => tag?.name)}
-                onSubmit={onPostSubmit}
-                loading={createPostFunc.loading}
-                error={createPostFunc.error}
-                initialTags={[]}
-                title=""
-                body=""
-                imgUrl=""
-              />
-            </div>
+            <AllPostsProvider>
+              <div className="m-3">
+                <PostForm
+                  availableTags={tags?.map((tag: Tag) => tag?.name)}
+                  onSubmit={onPostSubmit}
+                  loading={createPostFunc.loading}
+                  error={createPostFunc.error}
+                  initialTags={[]}
+                  title=""
+                  body=""
+                  imgUrl=""
+                />
+              </div>
+            </AllPostsProvider>
           }
         />
         <Route
           path="/posts/:id/edit"
           element={
-            <SinglePostProvider>
-              <EditPost />
-            </SinglePostProvider>
+            <AllPostsProvider>
+              <SinglePostProvider>
+                <EditPost />
+              </SinglePostProvider>
+            </AllPostsProvider>
           }
         />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Container>
