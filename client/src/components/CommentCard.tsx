@@ -29,6 +29,7 @@ type CommentCardProps = {
   id: string;
   message: string;
   createdAt: string;
+  updatedAt: string;
   likeCount: number;
   likedByMe: boolean;
   user: {
@@ -153,7 +154,7 @@ export const CommentCard = ({
               Icon={likedByMe ? FaHeart : FaRegHeart}
               isActive={likedByMe}
               onClick={onToggleCommentLike}
-              disabled={toggleLikeFunc.loading}
+              // disabled={toggleLikeFunc.loading}
               color="blue"
             >
               {likeCount}
@@ -181,7 +182,7 @@ export const CommentCard = ({
                 />
                 <IconButton
                   Icon={FaTrash}
-                  disabled={deleteCommentFunc.loading}
+                  // disabled={deleteCommentFunc.loading}
                   onClick={onDeleteComment}
                   // onClick={() => setShowModal(true)}
                   color="red"

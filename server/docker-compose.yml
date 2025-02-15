@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: blog_post
+    build: .
+    image: hslay13/blog_post:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -20,15 +20,14 @@ type PostFormProps = {
     image: File,
     returnTags?: string[],
   ) => Promise<void>;
-  loading: boolean;
-  error: Error | undefined;
-  title: string;
-  body: string;
+  loading?: boolean;
+  error?: Error | undefined;
+  title?: string;
+  body?: string;
   imgUrl?: string;
   availableTags?: string[];
   initialTags?: string[];
 };
-
 export const PostForm = ({
   onSubmit,
   loading,

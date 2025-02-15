@@ -38,7 +38,7 @@ export const signUp = async ({
 };
 
 type GetUserInfoProps = {
-  id: string;
+  id: string | undefined;
 };
 export const getUserInfo = async ({ id }: GetUserInfoProps) => {
   const response = await makeRequest({

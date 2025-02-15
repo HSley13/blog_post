@@ -2,16 +2,16 @@ import { CommentCard } from "./CommentCard";
 import { Comment } from "../types/types";
 
 type CommentListProps = {
-  comments: Comment[];
+  comments: Comment[] | undefined;
 };
 export const CommentList = ({ comments }: CommentListProps) => {
-  const sortedComments = comments.slice().sort((a, b) => {
+  const sortedComments = comments?.slice()?.sort((a, b) => {
     const dateA = Date.parse(a.updatedAt || a.createdAt);
     const dateB = Date.parse(b.updatedAt || b.createdAt);
     return dateB - dateA;
   });
 
-  return sortedComments.map((comment) => (
+  return sortedComments?.map((comment) => (
     <div key={comment.id}>
       <CommentCard
         id={comment.id}

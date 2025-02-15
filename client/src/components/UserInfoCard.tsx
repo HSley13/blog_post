@@ -8,6 +8,8 @@ type UserInfoCardProps = {
     lastName: string;
     email: string;
     imageUrl: string;
+    newPassword?: string;
+    confirmPassword?: string;
   };
   isOwner: boolean;
   onDeleteUser: () => void;
@@ -15,7 +17,7 @@ type UserInfoCardProps = {
     firstName: string;
     lastName: string;
     email: string;
-    file?: File;
+    file?: File | null;
   }) => Promise<void>;
   onUpdatePassword: (passwords: { newPassword: string }) => Promise<void>;
 };
@@ -66,10 +68,10 @@ export const UserInfoCard = ({
 
   const handleSave = async () => {
     await onUpdateUserInfo({
-      firstName: localUser.firstName,
-      lastName: localUser.lastName,
-      email: localUser.email,
-      file: image || undefined,
+      firstName: localUser.firstName || "",
+      lastName: localUser.lastName || "",
+      email: localUser.email || "",
+      file: image,
     });
 
     setIsEditing(false);
@@ -80,8 +82,8 @@ export const UserInfoCard = ({
   const handleChangePassword = async () => {
     if (
       !validateFields({
-        newPassword: localUser.newPassword,
-        confirmPassword: localUser.confirmPassword,
+        newPassword: localUser.newPassword || "",
+        confirmPassword: localUser.confirmPassword || "",
       })
     ) {
       return;
@@ -93,7 +95,7 @@ export const UserInfoCard = ({
     }
 
     await onUpdatePassword({
-      newPassword: localUser.newPassword,
+      newPassword: localUser.newPassword || "",
     });
 
     setIsChangingPassword(false);
@@ -124,15 +126,57 @@ export const UserInfoCard = ({
     <Card className="my-4 mb-4">
       <Card.Body>
         <Row>
-          <Col className="text-center">
+          <Col className="text-center mb-2">
             <Card.Title>Profile Picture</Card.Title>
             <Image
               src={imagePreview || localUser.imageUrl}
               roundedCircle
               fluid
-              className="align-self-center"
+              className="align-self-center mb-3"
               style={{ width: "250px", height: "250px" }}
             />
+            {isOwner && !isChangingPassword && (
+              <Col className="mt-2">
+                <Button
+                  variant="primary"
+                  onClick={() => setIsChangingPassword(!isChangingPassword)}
+                >
+                  Change Password
+                </Button>
+              </Col>
+            )}
+            {isChangingPassword && (
+              <Form className="mt-3">
+                <Form.Control
+                  className={`my-3 ${errors.newPassword ? "invalid" : ""}`}
+                  type="password"
+                  name="newPassword"
+                  value={localUser.newPassword}
+                  placeholder="Enter new password"
+                  onChange={handleInputChange}
+                />
+                <Form.Control
+                  className={`my-3 ${errors.confirmPassword ? "invalid" : ""}`}
+                  type="password"
+                  name="confirmPassword"
+                  value={localUser.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="Confirm new password"
+                />
+                <Col>
+                  <Button variant="success" onClick={handleChangePassword}>
+                    Save New Password
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleCancelPasswordChange}
+                    className="ms-2"
+                  >
+                    Cancel
+                  </Button>
+                </Col>
+              </Form>
+            )}
           </Col>
           {isEditing && (
             <Form.Group className="mb-3">
@@ -212,48 +256,6 @@ export const UserInfoCard = ({
               )}
             </Col>
           </Row>
-        )}
-        {isChangingPassword && (
-          <Form className="mt-3">
-            <Form.Control
-              className={`my-3 ${errors.newPassword ? "invalid" : ""}`}
-              type="password"
-              name="newPassword"
-              value={localUser.newPassword}
-              placeholder="Enter new password"
-              onChange={handleInputChange}
-            />
-            <Form.Control
-              className={`my-3 ${errors.confirmPassword ? "invalid" : ""}`}
-              type="password"
-              name="confirmPassword"
-              value={localUser.confirmPassword}
-              onChange={handleInputChange}
-              placeholder="Confirm new password"
-            />
-            <Col className="mb-2">
-              <Button variant="success" onClick={handleChangePassword}>
-                Save New Password
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleCancelPasswordChange}
-                className="ms-2"
-              >
-                Cancel
-              </Button>
-            </Col>
-          </Form>
-        )}
-        {isOwner && !isChangingPassword && (
-          <Col className="mt-2 mb-2">
-            <Button
-              variant="primary"
-              onClick={() => setIsChangingPassword(!isChangingPassword)}
-            >
-              Change Password
-            </Button>
-          </Col>
         )}
       </Card.Body>
     </Card>

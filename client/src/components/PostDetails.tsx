@@ -78,23 +78,15 @@ export const PostDetails = ({
         {post?.updatedAt !== post?.createdAt ? (
           <>
             <span className="text-muted" style={{ fontSize: "0.8rem" }}>
-              created:{" "}
-              {dateFormatter.format(
-                Date.parse(post?.createdAt || post?.created_at),
-              )}
+              created: {dateFormatter.format(Date.parse(post?.createdAt))}
             </span>
             <span className="text-muted" style={{ fontSize: "0.8rem" }}>
-              edited:{" "}
-              {dateFormatter.format(
-                Date.parse(post?.updatedAt || post?.updated_at),
-              )}
+              edited: {dateFormatter.format(Date.parse(post?.updatedAt))}
             </span>
           </>
         ) : (
           <span className="text-muted" style={{ fontSize: "0.8rem" }}>
-            {dateFormatter.format(
-              Date.parse(post?.createdAt || post?.created_at),
-            )}
+            {dateFormatter.format(Date.parse(post?.createdAt))}
           </span>
         )}
         {!onEdit && (

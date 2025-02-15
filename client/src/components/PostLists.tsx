@@ -102,12 +102,8 @@ export const PostList = () => {
                   likeCount={post.likeCount}
                   likedByMe={post.likedByMe}
                   tags={post?.tags?.map((tag: Tag) => tag?.name)}
-                  createdAt={dateFormatter.format(
-                    Date.parse(post.createdAt || post.created_at),
-                  )}
-                  updatedAt={dateFormatter.format(
-                    Date.parse(post.updatedAt || post.updated_at),
-                  )}
+                  createdAt={dateFormatter.format(Date.parse(post.createdAt))}
+                  updatedAt={dateFormatter.format(Date.parse(post.updatedAt))}
                 />
               </Col>
             );

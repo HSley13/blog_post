@@ -1,7 +1,7 @@
 package seeds
 
 import (
-	"comment/models"
+	"blog_post/models"
 	"gorm.io/gorm"
 	"os"
 )

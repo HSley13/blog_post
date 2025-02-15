@@ -58,6 +58,10 @@ export const App = () => {
                 onSubmit={onPostSubmit}
                 loading={createPostFunc.loading}
                 error={createPostFunc.error}
+                initialTags={[]}
+                title=""
+                body=""
+                imgUrl=""
               />
             </div>
           }

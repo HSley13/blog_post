@@ -49,7 +49,7 @@ export const PostCard = ({
               <IconButton
                 aria-label={likedByMe ? "Unlike" : "Like"}
                 isActive={likedByMe}
-                disabled={togglePostLikeFn.loading}
+                // disabled={togglePostLikeFn.loading}
                 Icon={likedByMe ? FaHeart : FaRegHeart}
                 onClick={onTogglePostLike}
                 color="blue"

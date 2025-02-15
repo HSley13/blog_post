@@ -8,7 +8,7 @@ type SinglePostContextValue = {
   post: Post | undefined;
   loading: boolean;
   error: Error | undefined;
-  getReplies: (parentId: string | null) => Comment[] | undefined;
+  getReplies: (parentId: string) => Comment[] | undefined;
   rootComments: Comment[] | undefined;
 };
 
@@ -30,15 +30,15 @@ export const SinglePostProvider = ({ children }: SinglePostProviderProps) => {
   const { loading, error, posts } = useAllPostsContext();
 
   const post = useMemo(() => {
-    return posts.find((post) => post.id === id);
+    return posts?.find((post) => post.id === id);
   }, [id, posts]);
 
   const commentsByParentId = useMemo(() => {
-    const group: { [key: string | null]: Comment[] } = {};
+    const group: { [key: string]: Comment[] } = {};
 
     if (post?.comments) {
       post.comments.forEach((comment) => {
-        const parentId = comment.parentId || null;
+        const parentId = comment.parentId || "";
         group[parentId] = group[parentId] || [];
         group[parentId].push(comment);
       });
@@ -47,16 +47,16 @@ export const SinglePostProvider = ({ children }: SinglePostProviderProps) => {
     return group;
   }, [post?.comments]);
 
-  const getReplies = (parentId: string | null) => {
-    return commentsByParentId[parentId];
+  const getReplies = (parentId: string) => {
+    return commentsByParentId[parentId || ""];
   };
 
   return (
     <Context.Provider
       value={{
-        post: post ? { id, ...post } : undefined,
+        post: post,
         getReplies,
-        rootComments: commentsByParentId[null],
+        rootComments: commentsByParentId[""],
         loading,
         error,
       }}

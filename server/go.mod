@@ -1,6 +1,6 @@
-module comment
+module blog_post
 
-go 1.23.4
+go 1.21
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.0

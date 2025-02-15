@@ -61,7 +61,7 @@ export const Post = () => {
           error={createCommentFunc.error}
           autoFocus={true}
         />
-        {rootComments?.length > 0 && (
+        {(rootComments?.length ?? 0) > 0 && (
           <div className="mt-4">
             <CommentList comments={rootComments} />
           </div>

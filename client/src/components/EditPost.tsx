@@ -7,7 +7,7 @@ import { updatePost } from "../services/posts";
 import { Container, Spinner, Alert } from "react-bootstrap";
 
 export const EditPost = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { loading, error, post } = useSinglePostContext();
   const { tags } = useAllPostsContext();
   const updatePostFn = useAsyncFn(updatePost);
@@ -16,11 +16,12 @@ export const EditPost = () => {
     title: string,
     body: string,
     userId?: string,
-    image: File,
+    image?: File,
     tags?: string[],
   ) => {
+    console.log(userId);
     await updatePostFn.execute({
-      id: id,
+      id: id?.toString(),
       title,
       body,
       file: image,

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"comment/db_aws"
-	"comment/models"
+	"blog_post/db_aws"
+	"blog_post/models"
 
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -104,8 +104,10 @@ func HandleUpdateUserInfo(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client) erro
 		}
 		defer fileContent.Close()
 
-		if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, user.Image); err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete old image"})
+		if user.Image != "" {
+			if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, user.Image); err != nil {
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete old image"})
+			}
 		}
 
 		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
@@ -339,14 +341,11 @@ func HandleGetPosts(ctx *fiber.Ctx, db *gorm.DB) error {
 			}
 		}
 
-		var userName string
-		db.Model(&models.User{}).Where("id = ?", post.UserID).Pluck("first_name", &userName)
-
 		newPost := fiber.Map{
 			"id": post.ID,
 			"user": fiber.Map{
 				"id":   post.UserID,
-				"name": userName,
+				"name": post.User.FirstName,
 			},
 			"title":     post.Title,
 			"body":      post.Body,
@@ -438,8 +437,11 @@ func HandleAddPost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client, clients map
 	newPost := fiber.Map{
 		"type": "POST_ADDED",
 		"data": fiber.Map{
-			"id":        post.ID,
-			"userId":    post.UserID,
+			"id": post.ID,
+			"user": fiber.Map{
+				"id":   post.UserID,
+				"name": post.User.FirstName,
+			},
 			"title":     post.Title,
 			"body":      post.Body,
 			"likeCount": 0,
@@ -489,10 +491,12 @@ func HandleUpdatePost(ctx *fiber.Ctx, db *gorm.DB, s3Client *s3.Client, clients 
 		}
 		defer fileContent.Close()
 
-		if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey); err != nil {
-			tx.Rollback()
-			log.Println("Error deleting image from S3:", err)
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
+		if post.ImageKey != "" && post.ImageKey != imageKey {
+			if err := db_aws.DeleteDataFromS3(ctx.Context(), s3Client, post.ImageKey); err != nil {
+				tx.Rollback()
+				log.Println("Error deleting image from S3:", err)
+				return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image on S3"})
+			}
 		}
 
 		imageUrl, err := db_aws.StoreDataToS3(ctx.Context(), s3Client, imageKey, fileContent)
@@ -665,15 +669,15 @@ func HandleAddComment(ctx *fiber.Ctx, db *gorm.DB, clients map[*websocket.Conn]b
 			"comment": fiber.Map{
 				"id":        comment.ID,
 				"message":   comment.Message,
-				"parentId":  comment.ParentID,
-				"updatedAt": comment.UpdatedAt,
 				"createdAt": comment.CreatedAt,
+				"updatedAt": comment.UpdatedAt,
+				"likeCount": 0,
+				"likedByMe": false,
+				"parentId":  comment.ParentID,
 				"user": fiber.Map{
 					"id":   comment.User.ID,
 					"name": comment.User.FirstName,
 				},
-				"likeCount": 0,
-				"likedByMe": false,
 			},
 		},
 	})

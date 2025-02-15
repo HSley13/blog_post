@@ -1,13 +1,10 @@
 package main
 
 import (
-	"comment/db_aws"
-	"comment/handlers"
-	"comment/seeds"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"blog_post/db_aws"
+	"blog_post/handlers"
+	"blog_post/seeds"
 
-	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/websocket/v2"
@@ -21,12 +18,10 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-east-1"))
+	s3Client, err := db_aws.NewS3Client()
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		log.Fatalf("Failed to create S3 client: %v", err)
 	}
-
-	s3Client := s3.NewFromConfig(cfg)
 
 	db := db_aws.InitDb()
 	seeds.Seed(db)
@@ -37,10 +32,11 @@ func main() {
 	blogPost := app.Group("/blog_post")
 
 	blogPost.Use(cors.New(cors.Config{
-		AllowOrigins:     os.Getenv("ALLOWED_ORIGINS"),
-		AllowMethods:     "GET,POST,PUT,DELETE",
+		AllowOrigins:     "https://hsley13.github.io",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin,Accept,Content-Type,Authorization",
 		AllowCredentials: true,
+		ExposeHeaders:    "Content-Length",
 	}))
 	blogPost.Use("/ws", func(ctx *fiber.Ctx) error {
 		return handlers.HandleWebSocket(ctx)
@@ -102,7 +98,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "12346"
 	}
 	log.Printf("Server is running on port %s", port)
 	if err := app.Listen(":" + port); err != nil {

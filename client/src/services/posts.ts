@@ -58,7 +58,7 @@ export const createPost = async ({
 };
 
 type updatePostProps = {
-  id: string;
+  id: string | undefined;
   title: string;
   body: string;
   file?: File;

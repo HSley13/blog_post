@@ -2,6 +2,7 @@ export type Comment = {
   id: string;
   message: string;
   createdAt: string;
+  updatedAt: string;
   likeCount: number;
   likedByMe: boolean;
   parentId: string | null;
@@ -31,5 +32,5 @@ export type Post = {
 export type Tag = {
   id: string;
   name: string;
-  Posts?: Post[];
+  posts?: Post[];
 };

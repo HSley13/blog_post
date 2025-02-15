@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Container, Row, Col, Alert, Spinner } from "react-bootstrap";
 import { useUser } from "../hooks/useUser";
 import { useParams } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Post, Tag } from "../types/types";
 import { PostCard } from "./PostCard";
 import { dateFormatter } from "../utils/utils";
 import { useAsync, useAsyncFn } from "../hooks/useAsync";
+import { useNavigate } from "react-router-dom";
 import {
   getUserInfo,
   updateUserInfo,
@@ -23,9 +24,10 @@ export const Profile = () => {
   const deleteUserFn = useAsyncFn(deleteUser);
   const updateUserInfoFn = useAsyncFn(updateUserInfo);
   const updatePasswordFn = useAsyncFn(updatePassword);
+  const navigate = useNavigate();
 
   const userInfoFn = useAsync(() => {
-    return getUserInfo({ id: id });
+    return getUserInfo({ id: id || "" });
   }, [id]);
 
   const myPosts = useMemo(() => {
@@ -53,13 +55,13 @@ export const Profile = () => {
     firstName: string;
     lastName: string;
     email: string;
-    file?: File;
+    file?: File | null;
   }) => {
     const updateUserResponse = await updateUserInfoFn.execute({
       firstName: userInfo.firstName,
       lastName: userInfo.lastName,
       email: userInfo.email,
-      file: userInfo.image || undefined,
+      file: userInfo.file || undefined,
     });
 
     if (updateUserResponse.message) {
@@ -128,12 +130,8 @@ export const Profile = () => {
                 likeCount={post.likeCount}
                 likedByMe={post.likedByMe}
                 tags={post?.tags?.map((tag: Tag) => tag?.name)}
-                createdAt={dateFormatter.format(
-                  Date.parse(post.createdAt || post.created_at),
-                )}
-                updatedAt={dateFormatter.format(
-                  Date.parse(post.updatedAt || post.updated_at),
-                )}
+                createdAt={dateFormatter.format(Date.parse(post.createdAt))}
+                updatedAt={dateFormatter.format(Date.parse(post.updatedAt))}
               />
             </Col>
           ))}

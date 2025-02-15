@@ -132,12 +132,19 @@ export const AllPostsProvider = ({ children }: AllPostsProviderProps) => {
     body: string,
     updatedAt: string,
     imageUrl?: string,
-    tags?: string[],
+    tags?: Tag[],
   ) => {
     setPosts((prevPosts: Post[]) =>
       prevPosts.map((post: Post) =>
         post.id === id
-          ? { ...post, title, body, updatedAt, imageUrl, tags }
+          ? {
+              ...post,
+              title,
+              body,
+              updatedAt,
+              imageUrl,
+              tags,
+            }
           : post,
       ),
     );
